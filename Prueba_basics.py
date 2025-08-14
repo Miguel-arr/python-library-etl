@@ -1,8 +1,6 @@
 from etl.extractors.db_extractor import DB_Extractor
-from etl.transformer.advanced_data_transforms import TransformOperations
-from etl.transformer.basics_data_transformer import BasicsTransformOperations
-
-
+from etl.transformer.operaciones_transformer import TransformOperations
+from etl.transformer.basics_transformer import BasicsTransformOperations
 import pandas as pd
 
 def test_mysql_connection():
@@ -41,7 +39,7 @@ def test_mysql_connection():
 
         # Ejemplo: Mostrar las primeras y últimas filas de la tabla "pedido"
         print("\n HEAD (Primeras filas de la tabla 'pedido') ---")
-        data_head = btf.show_head(pedidos, 5)
+        data_head = btf.show_head(pedidos, -1)
         print(data_head)
 
         print("\n TAIL (Últimas filas de la tabla 'pedido') ---")
@@ -66,7 +64,7 @@ def test_mysql_connection():
         clientes2 = btf.rename_column_labels(clientes, {"id": "id_cliente"})
 
         print("\n ORDENAR los datos por 'nuevo_total' de forma descendente...")
-        data = tf.sort_by(data, "id", ascending=False)
+        data = btf.sort_columns(data, "id", ascending=False)
         print(btf.show_head(data, 5))    
 
             
@@ -84,7 +82,7 @@ def test_mysql_connection():
         print("\nRealizando left join entre 'pedido' y 'cliente'...")
         data = tf.left_join(data, clientes2, on="id_cliente", show = -1)  # Unir por 'id_cliente'
         
-        
+        data
 
         print("\nRealizando right entre 'pedido' y 'comerciales'...")
         data = tf.right_join(pedidos, clientes2, on="id_cliente", show = 2)  # Unir por 'id_cliente'
@@ -93,7 +91,22 @@ def test_mysql_connection():
 
         print("\nCUT'...") 
         data = btf.select_columns(clientes, "nombre", "apellido1", show = 2)
-        print(btf.show_head(clientes, 5))
+       
+
+        print("\nRealizando inner join entre 'pedido' y 'cliente'...")
+        data_inner = tf.inner_join(pedidos, clientes2, on="id_cliente", show=3)
+        
+        print("\nRealizando outer join entre 'pedido' y 'cliente'...")
+        data_outer = tf.outer_join(pedidos, clientes2, on="id_cliente", show=3)
+
+
+        print("\nAgrupando los pedidos por 'id_cliente' y sumando el 'total'...")
+        grouped_data = tf.group_by_sum(pedidos, by="id_cliente", column="total")
+        print(btf.show_head(grouped_data, 5))
+
+        print("\nAplicando transformación a la columna 'total', multiplicando por 1.19 (IVA)...")
+        data_iva = tf.apply_to_column(pedidos.copy(), "total", lambda x: round(x * 1.19, 2))
+        print(btf.show_head(data_iva, 5))
 
        
 

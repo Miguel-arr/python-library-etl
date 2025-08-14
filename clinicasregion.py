@@ -121,6 +121,7 @@ def connection():
     
         #analyze_data(ipsXregion_limpia)
         
+
     except Exception as e:
         print(f"Error durante la ejecución: {e}")
     finally:

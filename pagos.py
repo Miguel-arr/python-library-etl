@@ -15,6 +15,7 @@ def connection():
     }
 
 
+
     data_transformer = BasicsTransformOperations
     data_select = DataSelect
     advances_transform = TransformOperations
@@ -51,6 +52,7 @@ def connection():
             citas_ips = data_select.select_columns(unionP_C, "id_usuario", "sexo", "nivel_escolaridad","valor_pagado", "estracto", "fecha_nacimiento", show = 2)
 
 
+
             df_agrupado_X_estrato = TransformOperations.group_by_sum(citas_ips, by='estracto', column='valor_pagado', show=5)
             
             df_agrupado_X_escolaridad = TransformOperations.group_by_sum(citas_ips, by='nivel_escolaridad', column='valor_pagado', show=5)
@@ -62,6 +64,7 @@ def connection():
         print(f"Error durante la ejecución: {e}")
     finally:
         db_connected.close_connection()
+
 
 if __name__ == "__main__":
     connection()

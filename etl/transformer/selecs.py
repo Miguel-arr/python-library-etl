@@ -1,6 +1,10 @@
 import pandas as pd
 from tabulate import tabulate
+<<<<<<< HEAD
 from etl.transformer.basics_data_transformer import BasicsTransformOperations
+=======
+from etl.transformer.basics_transformer import BasicsTransformOperations
+>>>>>>> d76cf6a7df4b952fec7c1ca6cacc12c0a39f6f65
 
 class DataSelect:
     # Asignamos la clase BasicsTransformOperations para usar sus operaciones si se requiere

@@ -26,6 +26,7 @@ class DB_Loader:
             print(f"❌ Error al cargar dimensión '{table_name}': {e}")
             raise
 
+
     def load_fact(self, df, table_name, foreign_keys_map=None, if_exists="append", index=False, engine=None):
         """
         Carga una tabla de hechos con validación de claves foráneas.
@@ -85,6 +86,7 @@ class DB_Loader:
             df.to_sql(name=table_name, con=eng, if_exists=if_exists, index=index)
             print(f"✅ Hechos cargados exitosamente en la tabla '{table_name}' (modo: {if_exists}).")
             
+
         except Exception as e:
             print(f"❌ Error al cargar hechos '{table_name}': {e}")
             raise

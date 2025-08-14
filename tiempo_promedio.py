@@ -1,6 +1,5 @@
 from etl.extractors.db_extractor import DB_Extractor
 from etl.transformer.basics_data_transformer import BasicsTransformOperations
-from etl.transformer.selecs import DataSelect
 from etl.loaders.db_loader import DB_Loader
 from etl.transformer.convert import ConvertOperations
   # Asegúrate de que esta importación esté arriba
@@ -17,7 +16,7 @@ def connection():
     basic_transform = BasicsTransformOperations
     data_select = DataSelect
     db_loader = DB_Extractor(**db_params)
-    data_convert = ConvertOperations    
+    data_convert = ConvertOperations
 
     try:
             # Conectar a la base de datos
@@ -25,6 +24,7 @@ def connection():
             loader = DB_Loader(engine=db_loader.engine)# instanciamos la conexion existente
 
             print("Extrayendo datos de la tabla CITAS_GENERALES...")
+
             citas_generales = db_loader.get_table("citas_generales")
             data = basic_transform.show_head(citas_generales, 5)
             print(data)
@@ -32,10 +32,10 @@ def connection():
             print("Extrayendo datos de la tabla URGENCIAS...")
             urgencias = db_loader.get_table("urgencias")
             data2 = basic_transform.show_head(urgencias, 5)
-            print(data2)
 
 
             print("\n citas de cirugia")
+
             citas = data_select.filter_equal(citas_generales, 'diagnostico', 'cirugia', show=5)
 
             print("\n nueva columna fechahorasolicitud y fechahoraatencion")
@@ -55,6 +55,7 @@ def connection():
 
             print("\n quitamos columnas irrelevantes")
             data_select.select_columns(citas_fechas, "fecha_solicitud", "hora_solicitud", complement= True, show = 3)
+
             
             print("\n nobtenemos el tiempo promedio de citas generales")
             promedio_tiempo_espera = citas_fechas['tiempo de espera'].mean()
@@ -66,10 +67,12 @@ def connection():
             loader.load_dimension(df=citas_fechas, table_name="dim_citas_fechas3")
 
             #print("\nvalores unicos citas")
+
             #pedidos_cliente = data_select.unique_values(citas_generales, 'diagnostico', True)
 
             #print("\nvalores unicos urge")
             #pedidos_cliente = data_select.unique_values(urgencias, 'diagnostico', True)
+
 
 
     except Exception as e:
