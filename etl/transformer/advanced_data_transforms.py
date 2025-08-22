@@ -35,7 +35,7 @@ class TransformOperations:
             raise
 
     @staticmethod
-    def left_join(df1, df2, on, show=0):
+    def left_join(df1, df2, on, show = 0):
         """
         Realiza una unión LEFT JOIN entre dos DataFrames según las columnas indicadas.
 
@@ -449,5 +449,42 @@ class TransformOperations:
 
         except Exception as e:
             print(f"Error al agrupar y contar: {e}")
+            raise
+
+
+    @staticmethod
+    def group_by_mean(df, by, column, show=0):
+        """
+        Agrupa el DataFrame por una o varias columnas y calcula el promedio de una columna específica.
+
+        Parámetros:
+        - df (pd.DataFrame): DataFrame de entrada.
+        - by (str o list): Columnas para agrupar.
+        - column (str): Columna cuyos valores se promedian.
+        - show (int): Control de visualización de resultados.
+
+        Retorna:
+        - pd.DataFrame agrupado con el promedio por grupo.
+        """
+        try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            if not (isinstance(by, str) or isinstance(by, list)):
+                raise TypeError("by debe ser una cadena o lista")
+            if not isinstance(column, str):
+                raise TypeError("column debe ser una cadena")
+            if not isinstance(show, int):
+                raise TypeError("show debe ser un número entero")
+
+            grouped_df = df.groupby(by)[column].mean().reset_index()
+
+            if show > 0:
+                print(TransformOperations.head(grouped_df, show))
+            elif show == -1:
+                print(TransformOperations.head(grouped_df, len(grouped_df)))
+
+            return grouped_df
+        except Exception as e:
+            print(f"Error al agrupar y promediar: {e}")
             raise
 

@@ -1,35 +1,21 @@
 import pandas as pd
 from tabulate import tabulate
-<<<<<<< HEAD
 from etl.transformer.basics_data_transformer import BasicsTransformOperations
-=======
-from etl.transformer.basics_transformer import BasicsTransformOperations
->>>>>>> d76cf6a7df4b952fec7c1ca6cacc12c0a39f6f65
+
 
 class DataSelect:
     # Asignamos la clase BasicsTransformOperations para usar sus operaciones si se requiere
     hd = BasicsTransformOperations
 
     @staticmethod
-    def head2(df, n=5):
-        """
-        Devuelve las primeras n filas del DataFrame en formato tabla.
-        Parámetros:
-            df (pd.DataFrame): DataFrame de pandas.
-            n (int): Número de filas a mostrar desde el inicio.
-        Retorna:
-            str: Tabla formateada con las primeras n filas.
-        """
+    def head2(df, n=5, print_result=True):
+        # Devuelve o imprime las primeras n filas del DataFrame.
         try:
-            # Validamos que df sea un DataFrame
-            if not isinstance(df, pd.DataFrame):
-                raise TypeError("df debe ser un DataFrame de pandas")
-            # Validamos que n sea entero y positivo
-            if not isinstance(n, int) or n < 0:
-                raise ValueError("n debe ser un entero positivo")
-            
-            # Retornamos la tabla formateada usando tabulate
-            return tabulate(df.head(n), headers="keys", tablefmt="fancy_grid", showindex=False)
+            df_head = df.head(n)
+            result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
+            if print_result:
+                print(result)
+            return result
         except Exception as e:
             print(f"Error al obtener las primeras {n} filas: {e}")
             raise
