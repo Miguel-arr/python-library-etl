@@ -22,7 +22,7 @@ def create_db_connection():
 
 def extract_tables(db_loader):
     """Extrae las tablas de la base de datos y muestra sus cabeceras"""
-    tablas = ["citas_generales", "urgencias", "hospitalizaciones", "medico", "ips"]
+     tablas = ["citas_generales", "urgencias", "hospitalizaciones", "medico", "ips", ]
     resultados = []
     
     for tabla in tablas:
@@ -32,76 +32,91 @@ def extract_tables(db_loader):
         resultados.append(datos)
     
     return tuple(resultados)
-
+    
 def transform_and_merge_data(citas, urg, hosp, medico, ips):
-    """
-    Realiza todas las transformaciones y uniones desde el join con médico hasta la limpieza final
-    Retorna la tabla limpia y consolidada
-    """
-    # 1. Join con tabla médico
-    tablas = [citas, hosp, urg]
-    resultados = []
 
-    for tabla in tablas:
-        print(f"\nREALIZAMOS LEFT JOIN ENTRE {tabla.upper()} CON MEDICO")
-        datos = advances_transform.left_join(tabla, medico, on=("id_medico","cedula"), show=1)
-        data_transformer.show_head(datos, 5)
-        resultados.append(datos)
+    # Diccionario con las tablas y sus columnas de código
+    tablas = {
+        "citas": (citas, "codigo_cita"),
+        "hospitalizaciones": (hosp, "codigo_hospitalizacion"),
+        "urgencias": (urg, "codigo_urgencia")
+    }
 
+    # --- PRIMER BUCLE: JOIN CON MÉDICO ---
+    resultados_join_medico = []
+    for nombre_tabla, (tabla, _) in tablas.items():
+        print(f"\n>>> JOIN {nombre_tabla.upper()} CON MÉDICO")
+        datos = advances_transform.left_join(tabla, medico, ("id_medico", "cedula"),0)
+        data_transformer.show_head(datos, 0)
+        resultados_join_medico.append((nombre_tabla, datos))
 
+    # --- SEGUNDO BUCLE: SELECCIÓN DE COLUMNAS ---
+    resultados_seleccion = []
+    for nombre_tabla, datos in resultados_join_medico:
+        codigo_col = tablas[nombre_tabla][1]  # Recuperamos la columna de código
+        print(f"\n>>> SELECCIÓN EN {nombre_tabla.upper()}")
+        datos_select = data_select.select_columns(
+            datos, "id_ips", codigo_col, "id_medico", show=1
+        )
+        resultados_seleccion.append((nombre_tabla, datos_select))
 
+    # --- TERCER BUCLE: JOIN CON IPS Y ESTANDARIZACIÓN ---
+    resultados_finales = []
+    for nombre_tabla, datos_select in resultados_seleccion:
+        codigo_col = tablas[nombre_tabla][1]  # Columna de código original
+        print(f"\n>>> JOIN {nombre_tabla.upper()} CON IPS")
+        datos_left = advances_transform.left_join(ips, datos_select, "id_ips", 0)
+        
+        print("\n>>> ESTANDARIZANDO DATOS")
+        datos_con_tipo = data_transformer.add_new_column(
+            datos_left, "tipo", lambda row: nombre_tabla, 0
+        )
+        datos_estandarizados = header_operations.rename_columns(
+            datos_con_tipo, {codigo_col: "codigo"}, show=0
+        )
+        resultados_finales.append(datos_estandarizados)
 
-
-
-    print("\nREALIZAMOS LEFT JOIN ENTRE CITAS, HOSPITALIZACION Y URGENCIAS CON MEDICO")
-    print("CITAS X MEDICO")
-    unionM_C = advances_transform.left_join(citas, medico, on=("id_medico","cedula"), show=1)
-    print("HOSPITALIZACION X MEDICO")
-    unionM_H = advances_transform.left_join(hosp, medico, on=("id_medico","cedula"), show=1)
-    print("URGENCIAS X MEDICO")
-    unionM_U = advances_transform.left_join(urg, medico, on=("id_medico","cedula"), show=0)
-
-    # 2. Selección de columnas relevantes
-    print("\nESCOGEMOS LOS DATOS RELEVANTES")
-    citas_ips = data_select.select_columns(unionM_C, "id_ips", "codigo_cita", "id_medico", show=1)
-    hosp_ips = data_select.select_columns(unionM_H, "id_ips", "codigo_hospitalizacion", "id_medico", show=1)
-    urg_ips = data_select.select_columns(unionM_U, "id_ips", "codigo_urgencia", "id_medico", show=1)
-
-    # 3. Join con tabla IPS
-    print("\nREALIZAMOS LEFT JOIN ENTRE IPS Y LAS NUEVAS TABLAS")
-    print("CITAS_MED X IPS")
-    union_citasxmed_ips = advances_transform.left_join(ips, citas_ips, on="id_ips", show=1)
-    print("HOSPITALIZACION_MED X IPS")
-    union_hospxmed_ips = advances_transform.left_join(ips, hosp_ips, on="id_ips", show=1)
-    print("URGENCIAS_MED X IPS")
-    union_urgxmed_ips = advances_transform.left_join(ips, urg_ips, on="id_ips", show=1)
-
-    # 4. Transformación de tablas (añadir tipo y renombrar)
-    print("\nCREAMOS COLUMNA 'TIPO' Y ESTANDARIZAMOS NOMBRES DE COLUMNAS")
-    tipo1 = data_transformer.add_new_column(union_citasxmed_ips, "tipo", lambda row: "general", 0)
-    nuevotipo_citas = header_operations.rename_columns(tipo1, {"codigo_cita": "codigo"}, show=1)
+    # --- CONSOLIDACIÓN FINAL (Ejemplo: concatenar todas las tablas) ---
     
-    tipo2 = data_transformer.add_new_column(union_hospxmed_ips, "tipo", lambda row: "hospitalizacion", 0)
-    nuevotipo_hosp = header_operations.rename_columns(tipo2, {"codigo_hospitalizacion": "codigo"}, show=1)
-    
-    tipo3 = data_transformer.add_new_column(union_urgxmed_ips, "tipo", lambda row: "urgencias", 0)
-    nuevotipo_urg = header_operations.rename_columns(tipo3, {"codigo_urgencia": "codigo"}, show=1)
-
-    # 5. Unión y limpieza de tablas
-    print("\nUNIMOS LAS 3 TABLAS Y LIMPIAMOS DATOS")
-    ipsXregion = advances_transform.union_all([nuevotipo_citas, nuevotipo_hosp, nuevotipo_urg], show=2)
+    ipsXregion = advances_transform.union_all([resultados_finales[0], resultados_finales[1], resultados_finales[2]], show=0)
     data_select.unique_values(ipsXregion, 'tipo', True)
 
-    ipsXregion_limpia = data_select.select_not_none(ipsXregion, 'codigo', show=2)
-    data_select.select_not_none(ipsXregion_limpia, 'codigo', complement=True, show=2)
-    
+    ipsXregion_limpia = data_select.select_not_none(ipsXregion, 'codigo', 0)
+    data_select.select_not_none(ipsXregion_limpia, 'codigo', True, 0)
+
     return ipsXregion_limpia
 
+    
+
 def analyze_data(ipsXregion_limpia):
-    """Realiza análisis final de los datos"""
-    agr = advances_transform.group_by_count(ipsXregion_limpia, ['id_ips','departamento', 'municipio'], show=0)
-    sorted_data = data_transformer.sort_by_columns(agr, "departamento", ascending=True)
-    print(data_transformer.show_head(sorted_data, 5))
+    """Identifica los centros con más atenciones por región/ciudad"""
+    # Paso 1: Agrupar por IPS, departamento y municipio, contando registros (o sumando 'conteo' si existe)
+    atenciones_por_ips = advances_transform.group_by_count(
+        ipsXregion_limpia, 
+        ['id_ips', 'departamento', 'municipio'], 
+        show=0
+    )
+    
+    # Paso 2: Ordenar por departamento/municipio y conteo (descendente)
+    atenciones_ordenadas = advances_transform.sort_by(
+        atenciones_por_ips, 
+        ['departamento', 'municipio', 'conteo'], 
+        ascending=[True, True, False],
+        show=0
+    )
+    
+    # Paso 3: Obtener el TOP 1 de IPS por municipio
+    top_ips_por_municipio = atenciones_ordenadas.groupby(
+        ['departamento', 'municipio']
+    ).first().reset_index()
+        
+    # Mostrar resultados
+    print("\n--- TOP IPS POR MUNICIPIO ---")
+    data_transformer.show_head(top_ips_por_municipio, 10)
+    
+    return top_ips_por_municipio
+
+    
 
 def connection():
     """Función principal que orquesta todo el proceso ETL"""
@@ -109,17 +124,14 @@ def connection():
     
     try:
         db_loader.connect()
-        
         # Extracción (ahora con el bucle for mejorado)
         citas, urg, hosp, medico, ips = extract_tables(db_loader)
 
         # Transformación y unión completa
-        #ipsXregion_limpia = transform_and_merge_data(citas, urg, hosp, medico, ips)
+        ipsXregion_limpia = transform_and_merge_data(citas, urg, hosp, medico, ips)
         
         # Análisis final
-        
-    
-        #analyze_data(ipsXregion_limpia)
+        analyze_data(ipsXregion_limpia)
         
 
     except Exception as e:

@@ -7,16 +7,16 @@ from tabulate import tabulate
 class ConvertOperations:
     
     @staticmethod
-    def head(df, n=5):
-        # Devuelve las primeras n filas del DataFrame. Si n es -1, devuelve todo el DataFrame.
+    def head(df, n=5, print_result=True):
+        # Devuelve o imprime las primeras n filas del DataFrame.
         try:
-            if n == -1:
-                df_head = df
-            else:
-                df_head = df.head(n)
-            return tabulate(df_head, headers="keys", tablefmt="fancy     _grid", showindex=False)
+            df_head = df.head(n)
+            result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
+            if print_result:
+                print(result)
+            return result
         except Exception as e:
-            print(f"Error al obtener las filas: {e}")
+            print(f"Error al obtener las primeras {n} filas: {e}")
             raise
     
     @staticmethod

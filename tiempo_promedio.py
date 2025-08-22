@@ -2,6 +2,8 @@ from etl.extractors.db_extractor import DB_Extractor
 from etl.transformer.basics_data_transformer import BasicsTransformOperations
 from etl.loaders.db_loader import DB_Loader
 from etl.transformer.convert import ConvertOperations
+from etl.transformer.selecs import DataSelect
+
   # Asegúrate de que esta importación esté arriba
 
 
@@ -36,7 +38,7 @@ def connection():
 
             print("\n citas de cirugia")
 
-            citas = data_select.filter_equal(citas_generales, 'diagnostico', 'cirugia', show=5)
+            citas = data_select.filter_equal(citas_generales, 'diagnostico', 'cirugia', 5)
 
             print("\n nueva columna fechahorasolicitud y fechahoraatencion")
             funcion1 = lambda row: str(row["fecha_solicitud"]) + " " + str(row["hora_solicitud"])

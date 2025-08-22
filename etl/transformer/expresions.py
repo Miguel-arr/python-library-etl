@@ -7,12 +7,14 @@ btf = BasicsTransformOperations
 
 class DataExpresion:
     @staticmethod
-    def head(df, n=5):
-        #Devuelve las primeras n filas del DataFrame en formato tabla.
+    def head(df, n=5, print_result=True):
+        # Devuelve o imprime las primeras n filas del DataFrame.
         try:
-            if not isinstance(n, int) or n < 0:
-                raise ValueError("n debe ser un entero positivo")
-            return tabulate(df.head(n), headers='keys', tablefmt='fancy_grid', showindex=False)
+            df_head = df.head(n)
+            result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
+            if print_result:
+                print(result)
+            return result
         except Exception as e:
             print(f"Error al obtener las primeras {n} filas: {e}")
             raise

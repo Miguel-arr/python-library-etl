@@ -6,11 +6,14 @@ class HeaderOperations:
     
 
     @staticmethod
-    def head(df, n=5): #funcion auxiliar para retornar un tamaño defino del dataframe con tabulate 
+    def head(df, n=5, print_result=True):
+        # Devuelve o imprime las primeras n filas del DataFrame.
         try:
             df_head = df.head(n)
-            return tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
-            
+            result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
+            if print_result:
+                print(result)
+            return result
         except Exception as e:
             print(f"Error al obtener las primeras {n} filas: {e}")
             raise

@@ -59,7 +59,7 @@ class DB_Loader:
             
             if foreign_keys_map:
                 # Verificar que las columnas del mapa existan en el DataFrame
-                missing_in_fact = [fk for fk in foreign_keys_map.keys() if fk not in df.columns]
+                missing_in_fact = [fk for fk in foreign_keys_map.keys() if fk not in df.columns] #Pone las llaves foraneas que no esten en el dataframme
                 if missing_in_fact:
                     raise ValueError(f"🚫 Columnas no encontradas en tabla de hechos: {missing_in_fact}")
                 
@@ -73,7 +73,7 @@ class DB_Loader:
                         # Dependiendo del dialecto SQL, la sintaxis puede variar
                         # Esta es una aproximación para PostgreSQL/SQLite
                         if len(unique_values) > 0:
-                            result = pd.read_sql(query, conn, params=(tuple(unique_values)),)
+                            result = pd.read_sql(query, conn, params=(tuple(unique_values)))
                             missing_values = set(unique_values) - set(result[dim_pk].unique())
                             
                             if missing_values:

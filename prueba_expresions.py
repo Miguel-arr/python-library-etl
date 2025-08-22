@@ -1,6 +1,6 @@
 from etl.extractors.db_extractor import DB_Extractor
-from etl.transformer.operaciones_transformer import TransformOperations
-from etl.transformer.basics_transformer import BasicsTransformOperations
+from etl.transformer.advanced_data_transforms import TransformOperations
+from etl.transformer.basics_data_transformer import BasicsTransformOperations
 from etl.transformer.expresions import DataExpresion
 import pandas as pd
 
