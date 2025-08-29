@@ -12,8 +12,7 @@ class ConvertOperations:
         try:
             df_head = df.head(n)
             result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
-            if print_result:
-                print(result)
+            
             return result
         except Exception as e:
             print(f"Error al obtener las primeras {n} filas: {e}")
@@ -168,64 +167,7 @@ class ConvertOperations:
             print(f"Error al convertir a categoría ordenada: {e}")
             raise
     
-    @staticmethod
-    def extract_date_components(df, date_column, components=None, show=0):
-        """
-        Extrae componentes de fecha (año, mes, día) de una columna datetime.
-        
-        Args:
-            df: DataFrame
-            date_column: str - Columna con fechas
-            components: list - Componentes a extraer ['year', 'month', 'day', 'weekday', 'hour', 'minute']
-            show: int - Mostrar las primeras filas (0: no mostrar, -1: mostrar todo, n: mostrar n filas)
-        
-        Returns:
-            DataFrame con nuevas columnas para cada componente
-        """
-        try:
-            if not isinstance(df, pd.DataFrame):
-                raise TypeError("El primer argumento debe ser un DataFrame")
-            if not isinstance(date_column, str):
-                raise TypeError("date_column debe ser un string")
-            
-            if components is None:
-                components = ['year', 'month', 'day']
-            elif not isinstance(components, list):
-                raise TypeError("components debe ser una lista")
-            
-            if date_column not in df.columns:
-                raise ValueError(f"La columna '{date_column}' no existe en el DataFrame")
-            
-            # Primero aseguramos que sea datetime
-            df[date_column] = pd.to_datetime(df[date_column], errors='coerce')
-            
-            for component in components:
-                if component == 'year':
-                    df[f'{date_column}_year'] = df[date_column].dt.year
-                elif component == 'month':
-                    df[f'{date_column}_month'] = df[date_column].dt.month
-                elif component == 'day':
-                    df[f'{date_column}_day'] = df[date_column].dt.day
-                elif component == 'weekday':
-                    df[f'{date_column}_weekday'] = df[date_column].dt.weekday
-                elif component == 'hour':
-                    df[f'{date_column}_hour'] = df[date_column].dt.hour
-                elif component == 'minute':
-                    df[f'{date_column}_minute'] = df[date_column].dt.minute
-                else:
-                    raise ValueError(f"Componente '{component}' no reconocido")
-            
-            # Mostrar resultados si show está habilitado
-            if show > 0:
-                print(ConvertOperations.head(df, show))
-            elif show == -1:
-                print(ConvertOperations.head(df, len(df)))
-            
-            return df
-            
-        except Exception as e:
-            print(f"Error al extraer componentes de fecha: {e}")
-            raise
+
     
     @staticmethod
     def boolean_to_binary(df, columns, show=0):
@@ -316,7 +258,95 @@ class ConvertOperations:
             
         except Exception as e:
             print(f"Error al dividir columna de strings: {e}")
-            raise                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+            raise     
+
+
+    def sort_by(df, columns, ascending=True, show=0):
+        """
+        Ordena un DataFrame por una o varias columnas.
+
+        Parámetros:
+        - df (pd.DataFrame): DataFrame de entrada a ordenar.
+        - columns (str o list): Nombre(s) de columna(s) para ordenar.
+        - ascending (bool o list, opcional): Orden ascendente (True) o descendente (False).
+          Puede ser un booleano único o una lista que corresponda a cada columna.
+          Por defecto True.
+        - show (int, opcional): Control de impresión:
+          0 = no imprimir,
+          >0 imprimir las primeras n filas,
+          -1 imprimir todo.
+
+        Retorna:
+        - pd.DataFrame ordenado según las columnas indicadas.
+
+        Lanza:
+        - TypeError si los argumentos no tienen el tipo esperado.
+        """
+        try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            if not (isinstance(columns, str) or isinstance(columns, list)):
+                raise TypeError("columns debe ser una cadena o una lista de cadenas")
+            if not isinstance(ascending, (bool, list)):
+                raise TypeError("ascending debe ser un booleano o lista de booleanos")
+            if not isinstance(show, int):
+                raise TypeError("show debe ser un número entero")
+
+            sorted_df = df.sort_values(by=columns, ascending=ascending)
+
+            if show > 0:
+                print(ConvertOperations.head(sorted_df, show))
+            elif show == -1:
+                print(ConvertOperations.head(sorted_df, len(sorted_df)))
+
+            return sorted_df
+
+        except Exception as e:
+            print(f"Error al ordenar las filas: {e}")
+            raise
+
+    @staticmethod
+    def clean_date_format(df, column, format_output='%Y-%m-%d', show=0):
+        """
+        Limpia el formato de una columna de fecha, removiendo la hora si es 00:00:00.
+        
+        Args:
+            df: DataFrame
+            column: str - Columna de fecha a limpiar
+            format_output: str - Formato de salida deseado (por defecto: '%Y-%m-%d')
+            show: int - Mostrar las primeras filas (0: no mostrar, -1: mostrar todo, n: mostrar n filas)
+        
+        Returns:
+            DataFrame con la columna de fecha formateada
+        """
+        try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("El primer argumento debe ser un DataFrame")
+            if not isinstance(column, str):
+                raise TypeError("column debe ser un string")
+            if not isinstance(format_output, str):
+                raise TypeError("format_output debe ser un string")
+            
+            if column not in df.columns:
+                raise ValueError(f"La columna '{column}' no existe en el DataFrame")
+            
+            # Convertir a datetime si no lo está
+            df[column] = pd.to_datetime(df[column], errors='coerce')
+            
+            # Formatear la fecha removiendo la hora si es 00:00:00
+            df[column] = df[column].dt.strftime(format_output)
+            
+            # Mostrar resultados si show está habilitado
+            if show > 0:
+                print(ConvertOperations.head(df, show))
+            elif show == -1:
+                print(ConvertOperations.head(df, len(df)))
+            
+            return df
+            
+        except Exception as e:
+            print(f"Error al limpiar formato de fecha: {e}")
+            raise
 
 
 def main():
@@ -326,14 +356,29 @@ def main():
     print("="*60)
     
     data = {
-        'id': ['001', '002', '003', '004', '005'],
-        'fecha': ['2023-01-15', '2023-02-20', '2023-03-10', '2023-04-05', '2023-04-45'],
-        'precio': ['$1,200.50ll', '$950.75j', '$2,300.00sdf', '$1,850.25fsd', '$2,850.25fsd'],
-        'cantidad': ['100n', 'n150', '$$200', '175 $$', '700 $$'],
-        'categoria': ['Bajo', 'Medio', 'Alto', 'Medio', 'Bajo'],
-        'activo': [True, False, True, True, False],
-        'nombre_completo': ['Juan Pérez', 'María García', 'Carlos López', 'Ana Martínez', 'Miguel Rodriguez']
-    }
+    'id': ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010', 
+           '011', '012', '013', '014', '015', '016', '017', '018', '019', '020'],
+    'fecha': ['2023-01-15', '2023-02-20', '2023-03-10', '2023-04-05', '2023-04-45',
+              '2023-05-12', '2023-06-18', '2023-07-23', '2023-08-30', '2023-09-05',
+              '2023-10-15', '2023-11-20', '2023-12-25', '2024-01-10', '2024-02-14',
+              '2024-03-20', '2024-04-01', '2024-05-05', '2024-06-15', '2024-07-20'],
+    'precio': ['$1,200.50ll', '$950.75j', '$2,300.00sdf', '$1,850.25fsd', '$2,850.25fsd',
+               '$3,100.00fs', '$2,500.75fs', '$1,750.30', '$4,200.00', '$3,800.50',
+               '$2,900.25fs', '$1,600.75', '$3,300.00fs', '$2,100.50', '$4,500.75',
+               '$1,950.25', '$3,700.00fs', '$2,800.50', '$4,800.75', '$3,600.25'],
+    'cantidad': ['100n', 'n150', '$$200', '175 $$', '700 $$', '250u', '300n', '225$$',
+                 '350u', '275n', '400$$', '325u', '450n', '375$$', '500u', '425n',
+                 '550$$', '475u', '600n', '525$$'],
+    'categoria': ['Bajo', 'Medio', 'Alto', 'Medio', 'Bajo', 'Alto', 'Medio', 'Bajo',
+                  'Alto', 'Medio', 'Bajo', 'Alto', 'Medio', 'Bajo', 'Alto', 'Medio',
+                  'Bajo', 'Alto', 'Medio', 'Bajo'],
+    'activo': [True, False, True, True, False, True, False, True, False, True,
+               False, True, True, False, True, False, True, False, True, False],
+    'nombre_completo': ['Juan Pérez', 'María García', 'Carlos López', 'Ana Martínez', 'Miguel Rodriguez',
+                        'Laura Sánchez', 'Pedro Gómez', 'Elena Torres', 'David Fernández', 'Sofía Ramírez',
+                        'Javier López', 'Carmen García', 'Francisco Martínez', 'Isabel Rodríguez', 'Antonio Pérez',
+                        'Teresa Gómez', 'José Sánchez', 'Lucía Fernández', 'Manuel Torres', 'Eva Ramírez']
+}
 
     df = pd.DataFrame(data)
     print("\nDataFrame original:")
@@ -357,7 +402,7 @@ def main():
         dtype={
             'id': 'int',
             'cantidad': 'int',
-            'precio': 'float',
+            'precio': 'int',
             'fecha': 'datetime',
             'activo': 'int'
         },
@@ -374,27 +419,20 @@ def main():
         'categoria',
         categories=['Bajo', 'Medio', 'Alto'],
         ordered=True,
-        show=3
+        show=-1
     )
-    print("\nCategorías ordenadas:", df['categoria'].cat.categories)
+    df = ConvertOperations.sort_by(
+        df, 
+        'categoria',
+        False,
+        0
 
-    # 5. Extracción de componentes de fecha (sin mostrar)
-    print("\n" + "="*60)
-    print("5. EXTRACCIÓN DE COMPONENTES DE FECHA (sin mostrar)")
-    print("="*60)
+    )
     
-    df = ConvertOperations.extract_date_components(
-        df,
-        'fecha',
-        components=['year', 'month', 'day', 'weekday'],
-        show=0  # No mostrar resultados
-    )
-    # Mostramos manualmente después
-    print(ConvertOperations.head(df, 2))
 
-    # 6. División de columna de strings (mostrando todo)
+    # 5. División de columna de strings (mostrando todo)
     print("\n" + "="*60)
-    print("6. DIVISIÓN DE COLUMNA DE STRINGS (mostrando todo)")
+    print("5. DIVISIÓN DE COLUMNA DE STRINGS (mostrando todo)")
     print("="*60)
     
     df = ConvertOperations.split_string_column(
@@ -402,14 +440,14 @@ def main():
         'nombre_completo',
         delimiter=' ',
         new_columns=['nombre', 'apellido'],
-        show=-1  # Mostrar todo
+        show=0  # Mostrar todo
     )
 
     # Resultado final (mostrando todo con el método head)
     print("\n" + "="*60)
     print("RESULTADO FINAL DEL DATAFRAME TRANSFORMADO")
     print("="*60)
-    print(ConvertOperations.head(df, -1))
+    print(ConvertOperations.head(df, 0))
     
     # Información de tipos de datos
     print("\n" + "="*60)

@@ -1,11 +1,11 @@
 import pandas as pd
 from tabulate import tabulate
-from etl.transformer.basics_data_transformer import BasicsTransformOperations
+
 
 
 class DataSelect:
     # Asignamos la clase BasicsTransformOperations para usar sus operaciones si se requiere
-    hd = BasicsTransformOperations
+  
 
     @staticmethod
     def head2(df, n=5, print_result=True):
@@ -13,8 +13,6 @@ class DataSelect:
         try:
             df_head = df.head(n)
             result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
-            if print_result:
-                print(result)
             return result
         except Exception as e:
             print(f"Error al obtener las primeras {n} filas: {e}")

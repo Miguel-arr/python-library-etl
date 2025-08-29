@@ -14,16 +14,36 @@ class DB_Loader:
         else:
             raise ValueError("❌ No se ha proporcionado un engine de base de datos.")
 
-    def load_dimension(self, df, table_name, if_exists="replace", index=False, engine=None):
+    def load_dimension(self, dfs, table_names, if_exists="replace", index=False, engine=None):
         """
-        Carga una tabla de dimensión. Por defecto reemplaza la tabla completa.
+        Carga una o varias tablas de dimensión. Por defecto reemplaza la tabla completa.
+        Parámetros:
+        -----------
+        dfs : DataFrame o lista de DataFrames
+            Datos a cargar
+        table_names : str o lista de str
+            Nombre(s) de la(s) tabla(s) de dimensión
+        if_exists : str
+            Comportamiento si la tabla existe ('fail', 'replace', 'append')
+        index : bool
+            Si se incluye el índice del DataFrame
+        engine : 
+            Conexión a la base de datos
         """
         try:
             eng = self._get_engine(engine)
-            df.to_sql(name=table_name, con=eng, if_exists=if_exists, index=index)
-            print(f"✅ Dimensión '{table_name}' cargada exitosamente (modo: {if_exists}).")
+            # Si es solo un DataFrame y un nombre, lo convierte en listas
+            if isinstance(dfs, pd.DataFrame):
+                dfs = [dfs]
+            if isinstance(table_names, str):
+                table_names = [table_names]
+            if len(dfs) != len(table_names):
+                raise ValueError("La cantidad de DataFrames y nombres de tabla debe coincidir.")
+            for df, table_name in zip(dfs, table_names):
+                df.to_sql(name=table_name, con=eng, if_exists=if_exists, index=index)
+                print(f"✅ Dimensión '{table_name}' cargada exitosamente (modo: {if_exists}).")
         except Exception as e:
-            print(f"❌ Error al cargar dimensión '{table_name}': {e}")
+            print(f"❌ Error al cargar dimensión: {e}")
             raise
 
 
@@ -51,7 +71,8 @@ class DB_Loader:
         loader.load_fact(df, "ventas", 
                         foreign_keys_map={
                             "id_producto": ("dim_producto", "producto_id"),
-                            "id_cliente": ("dim_clientes", "cliente_id")
+                            "id_cliente": ("dim_clientes", "cliente_id"),
+                            
                         })
         """
         try:
@@ -59,23 +80,19 @@ class DB_Loader:
             
             if foreign_keys_map:
                 # Verificar que las columnas del mapa existan en el DataFrame
-                missing_in_fact = [fk for fk in foreign_keys_map.keys() if fk not in df.columns] #Pone las llaves foraneas que no esten en el dataframme
+                missing_in_fact = [fk for fk in foreign_keys_map.keys() if fk not in df.columns]
                 if missing_in_fact:
                     raise ValueError(f"🚫 Columnas no encontradas en tabla de hechos: {missing_in_fact}")
                 
                 # Validar relaciones con dimensiones
                 with eng.connect() as conn:
                     for fk_col, (dim_table, dim_pk) in foreign_keys_map.items():
-                        # Verificar que existan los valores en la dimensión
                         unique_values = df[fk_col].unique()
-                        query = f"SELECT {dim_pk} FROM {dim_table} WHERE {dim_pk} IN %s"
-                        
-                        # Dependiendo del dialecto SQL, la sintaxis puede variar
-                        # Esta es una aproximación para PostgreSQL/SQLite
                         if len(unique_values) > 0:
-                            result = pd.read_sql(query, conn, params=(tuple(unique_values)))
+                            # Compatible con PostgreSQL: = ANY(%(values)s)
+                            query = f"SELECT {dim_pk} FROM {dim_table} WHERE {dim_pk} = ANY(%(values)s)"
+                            result = pd.read_sql(query, conn, params={"values": list(unique_values)})
                             missing_values = set(unique_values) - set(result[dim_pk].unique())
-                            
                             if missing_values:
                                 raise ValueError(
                                     f"🚫 Valores no encontrados en dimensión {dim_table}.{dim_pk}: "
@@ -86,7 +103,6 @@ class DB_Loader:
             df.to_sql(name=table_name, con=eng, if_exists=if_exists, index=index)
             print(f"✅ Hechos cargados exitosamente en la tabla '{table_name}' (modo: {if_exists}).")
             
-
         except Exception as e:
             print(f"❌ Error al cargar hechos '{table_name}': {e}")
             raise
@@ -115,3 +131,5 @@ class DB_Loader:
         except Exception as e:
             print(f"❌ Error al cargar datos: {e}")
             raise
+
+
