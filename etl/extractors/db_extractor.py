@@ -38,7 +38,7 @@ class DB_Extractor:
                     raise ValueError("Debe proporcionar 'service_name' para Oracle.")
                 
                 dsn = f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={self.host})(PORT={self.port}))(CONNECT_DATA=(SERVICE_NAME={self.service_name})))"
-                self.engine = create_engine(f"oracle+cx_oracle://{self.user}:{self.password}@{dsn}")
+                self.engine = create_engine(f"oracle+oracledb://{self.user}:{self.password}@{dsn}")
             else:
                 raise ValueError("Tipo de base de datos no soportado. Usa 'mysql', 'postgresql' o 'oracle'.")
 
@@ -73,7 +73,6 @@ class DB_Extractor:
         try:
             if self.engine is None:
                 raise ValueError("No hay conexión activa. Llame a connect() primero.")
-            
             df = pd.read_sql_table(table_name, con=self.engine)
             print(f"✅ Tabla '{table_name}' extraída con éxito.")
             return df

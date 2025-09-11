@@ -348,6 +348,39 @@ class ConvertOperations:
             print(f"Error al limpiar formato de fecha: {e}")
             raise
 
+    @staticmethod
+    def fill_nulls(df, column, value, show=0):
+        """
+        Reemplaza los valores nulos (None/NaN) de una columna por el valor especificado.
+
+        Args:
+            df: DataFrame
+            column: str - Columna a modificar
+            value: cualquier tipo - Valor para reemplazar los nulos
+            show: int - Mostrar las primeras filas (0: no mostrar, -1: mostrar todo, n: mostrar n filas)
+
+        Returns:
+            DataFrame con la columna modificada
+        """
+        try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("El primer argumento debe ser un DataFrame")
+            if column not in df.columns:
+                raise ValueError(f"La columna '{column}' no existe en el DataFrame")
+
+            df[column] = df[column].fillna(value)
+
+            if show > 0:
+                print(ConvertOperations.head(df, show))
+            elif show == -1:
+                print(ConvertOperations.head(df, len(df)))
+
+            return df
+
+        except Exception as e:
+            print(f"Error al rellenar nulos: {e}")
+            raise
+
 
 def main():
     # 1. Creación de un DataFrame de ejemplo
