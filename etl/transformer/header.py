@@ -2,12 +2,24 @@ import pandas as pd
 from tabulate import tabulate
 
 class HeaderOperations:
+    """
+    Clase que proporciona operaciones especializadas para manipular encabezados de DataFrames.
+    Incluye métodos para visualizar, renombrar, modificar y eliminar columnas.
+    """
     
-    
-
     @staticmethod
     def head(df, n=5, print_result=True):
-        # Devuelve o imprime las primeras n filas del DataFrame.
+        """
+        Muestra las primeras n filas del DataFrame incluyendo los encabezados de columnas.
+        
+        Args:
+            df: DataFrame de pandas a visualizar
+            n: Número de filas a mostrar (por defecto 5)
+            print_result: Si es True, imprime el resultado; si es False, solo lo retorna
+        
+        Returns:
+            String con la representación tabular de las primeras n filas incluyendo encabezados
+        """
         try:
             df_head = df.head(n)
             result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
@@ -18,7 +30,17 @@ class HeaderOperations:
     
     @staticmethod
     def replace_all_headers(df, new_headers, show=0): 
-        #Reemplaza completamente la fila de encabezado con una nueva lista de nombres de columnas.
+        """
+        Reemplaza completamente todos los nombres de columnas del DataFrame con una nueva lista.
+        
+        Args:
+            df: DataFrame de pandas
+            new_headers: Lista con los nuevos nombres para todas las columnas
+            show: Número de filas a mostrar después del cambio (0: no mostrar, >0: n filas, -1: todas)
+        
+        Returns:
+            DataFrame con los nuevos nombres de columnas asignados
+        """
         try:
             if not isinstance(df, pd.DataFrame):
                 raise TypeError("df debe ser un DataFrame de pandas")
@@ -27,8 +49,7 @@ class HeaderOperations:
             if len(new_headers) != len(df.columns):
                 raise ValueError("La cantidad de nuevos nombres debe coincidir con el número de columnas del DataFrame")
             
-            df.columns = new_headers  
-            # Cambia los nombres de las columnas
+            df.columns = new_headers  # Cambia los nombres de las columnas
 
             if show > 0:
                 print(HeaderOperations.head(df, show))
@@ -42,11 +63,25 @@ class HeaderOperations:
 
     @staticmethod
     def rename_columns(df, *args, show=0, **kwargs): 
-        # Renombra uno o más valores en la fila de encabezado del DataFrame y muestra opcionalmente el resultado.
-
+        """
+        Renombra columnas específicas del DataFrame usando diferentes métodos.
+        
+        Soporta dos formas de uso:
+        1. Con diccionario: rename_columns(df, {'viejo_nombre': 'nuevo_nombre'})
+        2. Con argumentos keyword: rename_columns(df, viejo_nombre='nuevo_nombre')
+        
+        Args:
+            df: DataFrame de pandas
+            *args: Puede contener un diccionario con mapeo de renombrado
+            show: Número de filas a mostrar después del cambio (0: no mostrar, >0: n filas, -1: todas)
+            **kwargs: Pares clave-valor para renombrar columnas (clave: nombre viejo, valor: nombre nuevo)
+        
+        Returns:
+            DataFrame con las columnas especificadas renombradas
+        """
         try:
             # Si pasamos un diccionario de renombrado, usamos el método rename de pandas
-            if isinstance(args[0], dict):
+            if args and isinstance(args[0], dict):
                 df = df.rename(columns=args[0])
             else:
                 # Si se pasan argumentos individuales, renombramos una sola columna
@@ -65,12 +100,18 @@ class HeaderOperations:
             raise
 
     @staticmethod
+    def drop_header(df, columns_to_drop, show=0):
+        """
+        Elimina una o más columnas del DataFrame basado en sus nombres.
         
-
-    @staticmethod
-    def drop_header(df, columns_to_drop, show=0): # ELIMINAR ESA EN BASICS TRANSFORMS
-        #Elimina una o más columnas del DataFrame.
+        Args:
+            df: DataFrame de pandas
+            columns_to_drop: Nombre individual (string) o lista de nombres de columnas a eliminar
+            show: Número de filas a mostrar después de la eliminación (0: no mostrar, >0: n filas, -1: todas)
         
+        Returns:
+            DataFrame con las columnas especificadas eliminadas
+        """
         try:
             if not isinstance(df, pd.DataFrame):
                 raise TypeError("df debe ser un DataFrame de pandas")
@@ -95,7 +136,18 @@ class HeaderOperations:
             raise
 
     @staticmethod
-    def prefix_header(df, prefix, show=0): #ante pone un prefijo
+    def prefix_header(df, prefix, show=0):
+        """
+        Agrega un prefijo a todos los nombres de columnas del DataFrame.
+        
+        Args:
+            df: DataFrame de pandas
+            prefix: Prefijo a agregar a todos los nombres de columnas
+            show: Número de filas a mostrar después del cambio (0: no mostrar, >0: n filas, -1: todas)
+        
+        Returns:
+            DataFrame con prefijos agregados a todos los nombres de columnas
+        """
         try:
             df = df.add_prefix(prefix)
             if show > 0:
@@ -108,7 +160,18 @@ class HeaderOperations:
             raise
 
     @staticmethod
-    def suffix_header(df, suffix, show=0):#dobrepone pone un prefijo
+    def suffix_header(df, suffix, show=0):
+        """
+        Agrega un sufijo a todos los nombres de columnas del DataFrame.
+        
+        Args:
+            df: DataFrame de pandas
+            suffix: Sufijo a agregar a todos los nombres de columnas
+            show: Número de filas a mostrar después del cambio (0: no mostrar, >0: n filas, -1: todas)
+        
+        Returns:
+            DataFrame con sufijos agregados a todos los nombres de columnas
+        """
         try:
             df = df.add_suffix(suffix)
             if show > 0:

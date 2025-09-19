@@ -1,12 +1,20 @@
-
 import pandas as pd
 from tabulate import tabulate
 from functools import wraps
 
-
 def validate_params(df_type=False, columns_type=False, lambda_type=False, n_type=False):
-
-    #Decorador para validar parámetros en las funciones de transformación de DataFrames.
+    """
+    Decorador para validar parámetros en las funciones de transformación de DataFrames.
+    
+    Args:
+        df_type: Valida si el primer argumento es un DataFrame
+        columns_type: Valida si el segundo argumento es string, lista, diccionario o None
+        lambda_type: Valida si el argumento es una función callable o string
+        n_type: Valida si el último argumento es un entero
+    
+    Returns:
+        Función decorada con validación de parámetros
+    """
     
     def decorator(func):
         @wraps(func)
@@ -47,12 +55,25 @@ def validate_params(df_type=False, columns_type=False, lambda_type=False, n_type
         return wrapper
     return decorator
 
-
 class BasicsTransformOperations:
+    """
+    Clase que proporciona operaciones básicas de transformación para DataFrames de pandas.
+    Incluye métodos para visualización, manipulación y transformación de datos.
+    """
 
     @staticmethod
     def show_head(df, n=5, print_result=True):
-        # Devuelve o imprime las primeras n filas del DataFrame.
+        """
+        Muestra las primeras n filas del DataFrame en formato tabular.
+        
+        Args:
+            df: DataFrame de pandas a visualizar
+            n: Número de filas a mostrar (por defecto 5)
+            print_result: Si es True, imprime el resultado; si es False, solo lo retorna
+        
+        Returns:
+            String con la representación tabular de las primeras n filas
+        """
         try:
             df_head = df.head(n)
             result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
@@ -63,7 +84,17 @@ class BasicsTransformOperations:
 
     @staticmethod
     def show_tail(df, n=5, print_result=False):
-        #Devuelve las últimas n filas del DataFrame.
+        """
+        Muestra las últimas n filas del DataFrame en formato tabular.
+        
+        Args:
+            df: DataFrame de pandas a visualizar
+            n: Número de filas a mostrar (por defecto 5)
+            print_result: Si es True, imprime el resultado; si es False, solo lo retorna
+        
+        Returns:
+            String con la representación tabular de las últimas n filas
+        """
         try:
             df_head = df.tail(n)
             result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
@@ -74,12 +105,22 @@ class BasicsTransformOperations:
             print(f"Error al obtener las últimas {n} filas: {e}")
             raise
     
-  
 
     @staticmethod
     @validate_params(df_type=True, columns_type=True, lambda_type=True, n_type=True)
     def add_new_column(df, new_column_name, lambda_func, show=0):
-        #Agrega una nueva columna al DataFrame usando una función lambda.
+        """
+        Agrega una nueva columna al DataFrame aplicando una función lambda a cada fila.
+        
+        Args:
+            df: DataFrame de pandas
+            new_column_name: Nombre de la nueva columna a crear
+            lambda_func: Función lambda o callable que se aplica a cada fila
+            show: Número de filas a mostrar después de la operación (0: no mostrar, >0: n filas, -1: todas)
+        
+        Returns:
+            DataFrame con la nueva columna agregada
+        """
         try:
             if callable(lambda_func):
                 df[new_column_name] = df.apply(lambda_func, axis=1)
@@ -95,12 +136,23 @@ class BasicsTransformOperations:
             print(f"Error al agregar la columna: {e}")
             raise
 
-   
+    
 
     @staticmethod
     @validate_params(df_type=True, columns_type=True, n_type=True)
     def remove_columns(df, columns_to_drop, show=0, extra_param=None):
-        #Elimina columnas del DataFrame.
+        """
+        Elimina una o múltiples columnas especificadas del DataFrame.
+        
+        Args:
+            df: DataFrame de pandas
+            columns_to_drop: Columna única (string) o lista de columnas a eliminar
+            show: Número de filas a mostrar después de la operación (0: no mostrar, >0: n filas, -1: todas)
+            extra_param: Parámetro adicional no utilizado (mantenido por compatibilidad)
+        
+        Returns:
+            DataFrame con las columnas especificadas eliminadas
+        """
         try:
             result_df = df.drop(columns=columns_to_drop)
             if show > 0:
@@ -116,7 +168,17 @@ class BasicsTransformOperations:
     @staticmethod
     @validate_params(df_type=True, columns_type=True, n_type=True)
     def select_columns(df, *columns, show=0):
-        #Selecciona columnas específicas del DataFrame.
+        """
+        Selecciona y reordena columnas específicas del DataFrame.
+        
+        Args:
+            df: DataFrame de pandas
+            *columns: Nombres de las columnas a seleccionar (argumentos variables)
+            show: Número de filas a mostrar después de la operación (0: no mostrar, >0: n filas, -1: todas)
+        
+        Returns:
+            DataFrame con solo las columnas especificadas en el orden indicado
+        """
         try:
             result_df = df[list(columns)]
             if show > 0:
@@ -131,7 +193,18 @@ class BasicsTransformOperations:
     @staticmethod
     @validate_params(df_type=True, columns_type=True, lambda_type=True, n_type=True)
     def transform_column(df, column, func, show=0):
-        #Aplica una función LAMBDA a una columna específica del DataFrame.
+        """
+        Aplica una función a todos los elementos de una columna específica.
+        
+        Args:
+            df: DataFrame de pandas
+            column: Nombre de la columna a transformar
+            func: Función callable o lambda que se aplica a cada elemento de la columna
+            show: Número de filas a mostrar después de la operación (0: no mostrar, >0: n filas, -1: todas)
+        
+        Returns:
+            DataFrame con la columna especificada transformada
+        """
         try:
             df[column] = df[column].apply(func)
             if show > 0:
@@ -146,7 +219,17 @@ class BasicsTransformOperations:
     @staticmethod
     @validate_params(df_type=True, lambda_type=True, n_type=True)
     def filter_by_condition(df, lambda_func, show=0):
-        #Filtra filas de un DataFrame según una función lambda.
+        """
+        Filtra filas del DataFrame basado en una condición definida por una función lambda.
+        
+        Args:
+            df: DataFrame de pandas
+            lambda_func: Función lambda que devuelve True/False para cada fila
+            show: Número de filas a mostrar después de la operación (0: no mostrar, >0: n filas, -1: todas)
+        
+        Returns:
+            DataFrame filtrado con solo las filas que cumplen la condición
+        """
         try:
             filtered_df = df[df.apply(lambda_func, axis=1)]
             if show > 0:
@@ -160,6 +243,17 @@ class BasicsTransformOperations:
 
     @staticmethod
     def sort_columns(df, columns, ascending=True):
+        """
+        Ordena el DataFrame por una o múltiples columnas especificadas.
+        
+        Args:
+            df: DataFrame de pandas
+            columns: Columna única (string) o lista de columnas para ordenar
+            ascending: Dirección del ordenamiento (True: ascendente, False: descendente)
+        
+        Returns:
+            DataFrame ordenado por las columnas especificadas
+        """
         try:
             # Verificar si la columna existe en el DataFrame
             if isinstance(columns, str):  # Si es un solo nombre de columna
@@ -175,6 +269,147 @@ class BasicsTransformOperations:
         except Exception as e:
             print(f"Error al ordenar las filas: {e}")
             raise
-    
-    
 
+    @staticmethod
+    @validate_params(df_type=True, columns_type=True, n_type=True)
+    def convertir_columna_a_lista(df, columna, delimitador=',', nueva_columna=None, show=0):
+        """
+        Convierte una columna de strings o enteros en una lista de valores separados por delimitador.
+        
+        Args:
+            df: DataFrame de pandas
+            columna: Nombre de la columna a convertir
+            delimitador: Caracter delimitador para separar los valores (por defecto ',')
+            nueva_columna: Nombre para la nueva columna de lista (si es None, usa nombre_original_lista)
+            show: Mostrar resultados (0: no mostrar, >0: n filas, -1: todas las filas)
+        
+        Returns:
+            DataFrame con nueva columna que contiene listas de valores
+        """
+        try:
+            if columna not in df.columns:
+                raise ValueError(f"La columna '{columna}' no existe en el DataFrame")
+            
+            # Crear nombre para la nueva columna
+            if nueva_columna is None:
+                nueva_columna = f"{columna}_lista"
+            
+            # Convertir a string por si hay enteros y luego split
+            df_copy = df.copy()
+            df_copy[nueva_columna] = df_copy[columna].astype(str).str.split(delimitador)
+            
+            # Mostrar resultados si está habilitado
+            if show > 0:
+                print(f"=== DESPUÉS DE CONVERTIR '{columna}' A LISTA ===")
+                print(f"Columnas: {list(df_copy.columns)}")
+                print(BasicsTransformOperations.show_head(df_copy, show))
+                print("\n")
+            elif show == -1:
+                print(f"=== DESPUÉS DE CONVERTIR '{columna}' A LISTA ===")
+                print(f"Columnas: {list(df_copy.columns)}")
+                print(BasicsTransformOperations.show_head(df_copy, len(df_copy)))
+                print("\n")
+            
+            return df_copy
+            
+        except Exception as e:
+            print(f"Error al convertir columna a lista: {e}")
+            raise
+
+    @staticmethod
+    @validate_params(df_type=True, columns_type=True, n_type=True)
+    def explotar_columna_lista(df, columna_lista, nueva_columna=None, mantener_original=True, show=0):
+        """
+        Expande una columna que contiene listas en múltiples filas (operación explode).
+        Cada elemento de la lista se convierte en una fila individual.
+        
+        Args:
+            df: DataFrame con la columna de listas
+            columna_lista: Nombre de la columna que contiene las listas
+            nueva_columna: Nombre para la nueva columna (si es None, usa nombre original sin '_lista')
+            mantener_original: Si True, mantiene la columna original de listas
+            show: Mostrar resultados (0: no mostrar, >0: n filas, -1: todas las filas)
+        
+        Returns:
+            DataFrame normalizado con una fila por cada elemento de las listas
+        """
+        try:
+            if columna_lista not in df.columns:
+                raise ValueError(f"La columna '{columna_lista}' no existe en el DataFrame")
+            
+            # Verificar que la columna contenga listas
+            if not df[columna_lista].apply(lambda x: isinstance(x, list)).any():
+                raise ValueError(f"La columna '{columna_lista}' no contiene listas válidas")
+            
+            # Crear nombre para la nueva columna
+            if nueva_columna is None:
+                nueva_columna = columna_lista.replace('_lista', '')
+            
+            # Crear copia para no modificar el original
+            df_copy = df.copy()
+            
+            # Hacer explode de la columna de lista
+            df_explode = df_copy.explode(columna_lista)
+            
+            # Crear nueva columna con valores limpios
+            df_explode[nueva_columna] = df_explode[columna_lista].astype(str).str.strip()
+            
+            # Eliminar columna temporal si no se quiere mantener
+            if not mantener_original:
+                df_explode = df_explode.drop(columns=[columna_lista])
+            
+            # Mostrar resultados si está habilitado
+            if show > 0:
+                print(f"=== DESPUÉS DE EXPLODE DE '{columna_lista}' ===")
+                print(f"Filas originales: {len(df)}, Filas finales: {len(df_explode)}")
+                print(f"Columnas: {list(df_explode.columns)}")
+                print(BasicsTransformOperations.show_head(df_explode, show))
+                print("\n")
+            elif show == -1:
+                print(f"=== DESPUÉS DE EXPLODE DE '{columna_lista}' ===")
+                print(f"Filas originales: {len(df)}, Filas finales: {len(df_explode)}")
+                print(f"Columnas: {list(df_explode.columns)}")
+                print(BasicsTransformOperations.show_head(df_explode, len(df_explode)))
+                print("\n")
+            
+            return df_explode
+            
+        except Exception as e:
+            print(f"Error al explotar columna lista: {e}")
+            raise
+
+    @staticmethod
+    @validate_params(df_type=True, columns_type=True, n_type=True)
+    def normalizar_columna_con_delimitador(df, columna, delimitador=',', mantener_original=True, show=0):
+        """
+        Proceso completo de normalización: convierte columna con delimitadores a lista y luego expande.
+        
+        Args:
+            df: DataFrame original
+            columna: Columna a normalizar (contiene valores separados por delimitador)
+            delimitador: Caracter delimitador para separar los valores
+            mantener_original: Si mantener columna original después del proceso completo
+            show: Mostrar resultados intermedios en cada paso del proceso
+        
+        Returns:
+            DataFrame completamente normalizado con una fila por cada valor originalmente separado
+        """
+        try:
+            # Paso 1: Convertir a lista
+            df_con_lista = BasicsTransformOperations.convertir_columna_a_lista(
+                df, columna, delimitador, show=show
+            )
+            
+            # Paso 2: Hacer explode
+            df_normalizado = BasicsTransformOperations.explotar_columna_lista(
+                df_con_lista, 
+                f'{columna}_lista', 
+                mantener_original=mantener_original,
+                show=show
+            )
+            
+            return df_normalizado
+            
+        except Exception as e:
+            print(f"Error en normalización completa: {e}")
+            raise

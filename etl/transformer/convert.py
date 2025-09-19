@@ -1,17 +1,34 @@
 import pandas as pd
 from tabulate import tabulate
 
-import pandas as pd
-from tabulate import tabulate
-
 class ConvertOperations:
+    """
+    Clase que proporciona operaciones de conversión y transformación para DataFrames de pandas.
+    Contiene métodos estáticos para manipulación de tipos de datos, limpieza y transformación de columnas.
+    """
     
     @staticmethod
     def head(df, n=5, print_result=True):
-        # Devuelve o imprime las primeras n filas del DataFrame.
+        """
+        Devuelve o imprime las primeras n filas del DataFrame formateadas como tabla.
+        
+        Args:
+            df (pd.DataFrame): DataFrame a visualizar
+            n (int, opcional): Número de filas a mostrar. Por defecto 5
+            print_result (bool, opcional): Si se debe imprimir el resultado. Por defecto True
+            
+        Returns:
+            str: Representación formateada de las primeras n filas del DataFrame
+            
+        Raises:
+            Exception: Si ocurre algún error durante el proceso
+        """
         try:
             df_head = df.head(n)
             result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
+            
+            if print_result:
+                print(result)
             
             return result
         except Exception as e:
@@ -21,17 +38,28 @@ class ConvertOperations:
     @staticmethod
     def convert_column_type(df, columns, dtype, show=0):
         """
-        Convierte el tipo de una o varias columnas.
+        Convierte el tipo de una o varias columnas a un tipo de dato específico.
         
         Args:
-            df: DataFrame de pandas
-            columns: str o list - Columnas a convertir
-            dtype: str o dict - Tipo de dato objetivo (ej. 'int', 'float', 'str', 'datetime', 'category')
-                              o diccionario con {columna: tipo}
-            show: int - Mostrar las primeras filas (0: no mostrar, -1: mostrar todo, n: mostrar n filas)
+            df (pd.DataFrame): DataFrame de pandas a transformar
+            columns (str o list): Nombre(s) de la(s) columna(s) a convertir
+            dtype (str o dict): Tipo de dato objetivo o diccionario con mapeo de columnas
+                Tipos soportados: 'int', 'float', 'str', 'datetime', 'category'
+            show (int): Control de visualización del resultado
+                0: No mostrar, -1: Mostrar todo, n: Mostrar las primeras n filas
         
         Returns:
-            DataFrame con las columnas convertidas
+            pd.DataFrame: DataFrame con las columnas convertidas
+            
+        Raises:
+            TypeError: Si los parámetros no son del tipo esperado
+            ValueError: Si las columnas especificadas no existen en el DataFrame
+            
+        Example:
+            >>> df = ConvertOperations.convert_column_type(df, 'fecha', 'datetime')
+            >>> df = ConvertOperations.convert_column_type(df, ['col1', 'col2'], 'int')
+            >>> dtype_map = {'col1': 'int', 'col2': 'float'}
+            >>> df = ConvertOperations.convert_column_type(df, ['col1', 'col2'], dtype_map)
         """
         try:
             # Validación de parámetros
@@ -83,12 +111,17 @@ class ConvertOperations:
         Limpia columnas numéricas eliminando símbolos no numéricos ($, %, comas, etc.)
         
         Args:
-            df: DataFrame
-            columns: str o list - Columnas a limpiar
-            show: int - Mostrar las primeras filas (0: no mostrar, -1: mostrar todo, n: mostrar n filas)
+            df (pd.DataFrame): DataFrame a limpiar
+            columns (str o list): Columna(s) a procesar
+            show (int): Control de visualización
+                0: No mostrar, -1: Mostrar todo, n: Mostrar las primeras n filas
         
         Returns:
-            DataFrame con columnas numéricas limpias
+            pd.DataFrame: DataFrame con columnas numéricas limpias
+            
+        Example:
+            >>> df = ConvertOperations.clean_numeric_columns(df, 'precio')
+            >>> df = ConvertOperations.clean_numeric_columns(df, ['precio', 'descuento'])
         """
         try:
             if not isinstance(df, pd.DataFrame):
@@ -124,17 +157,22 @@ class ConvertOperations:
     @staticmethod
     def convert_to_ordered_category(df, column, categories, ordered=True, show=0):
         """
-        Convierte una columna a categoría ordenada.
+        Convierte una columna a tipo categórico con orden específico.
         
         Args:
-            df: DataFrame
-            column: str - Columna a convertir
-            categories: list - Categorías en orden
-            ordered: bool - Si las categorías tienen orden
-            show: int - Mostrar las primeras filas (0: no mostrar, -1: mostrar todo, n: mostrar n filas)
+            df (pd.DataFrame): DataFrame de entrada
+            column (str): Columna a convertir
+            categories (list): Lista de categorías en el orden deseado
+            ordered (bool): Si las categorías mantienen orden (True por defecto)
+            show (int): Control de visualización
+                0: No mostrar, -1: Mostrar todo, n: Mostrar las primeras n filas
         
         Returns:
-            DataFrame con la columna convertida a categoría ordenada
+            pd.DataFrame: DataFrame con la columna convertida a categoría ordenada
+            
+        Example:
+            >>> categorias = ['bajo', 'medio', 'alto']
+            >>> df = ConvertOperations.convert_to_ordered_category(df, 'nivel', categorias, ordered=True)
         """
         try:
             if not isinstance(df, pd.DataFrame):
@@ -167,20 +205,23 @@ class ConvertOperations:
             print(f"Error al convertir a categoría ordenada: {e}")
             raise
     
-
-    
     @staticmethod
     def boolean_to_binary(df, columns, show=0):
         """
-        Convierte columnas booleanas a binarias (0 y 1).
+        Convierte columnas booleanas a valores binarios (0 y 1).
         
         Args:
-            df: DataFrame
-            columns: str o list - Columnas a convertir
-            show: int - Mostrar las primeras filas (0: no mostrar, -1: mostrar todo, n: mostrar n filas)
+            df (pd.DataFrame): DataFrame a transformar
+            columns (str o list): Columna(s) booleanas a convertir
+            show (int): Control de visualización
+                0: No mostrar, -1: Mostrar todo, n: Mostrar las primeras n filas
         
         Returns:
-            DataFrame con columnas convertidas a binario
+            pd.DataFrame: DataFrame con columnas convertidas a binario
+            
+        Example:
+            >>> df = ConvertOperations.boolean_to_binary(df, 'activo')
+            >>> df = ConvertOperations.boolean_to_binary(df, ['activo', 'verificado'])
         """
         try:
             if not isinstance(df, pd.DataFrame):
@@ -212,17 +253,23 @@ class ConvertOperations:
     @staticmethod
     def split_string_column(df, column, delimiter, new_columns=None, show=0):
         """
-        Divide una columna de strings en múltiples columnas.
+        Divide una columna de strings en múltiples columnas usando un delimitador.
         
         Args:
-            df: DataFrame
-            column: str - Columna a dividir
-            delimiter: str - Delimitador para dividir los strings
-            new_columns: list - Nombres para las nuevas columnas (opcional)
-            show: int - Mostrar las primeras filas (0: no mostrar, -1: mostrar todo, n: mostrar n filas)
+            df (pd.DataFrame): DataFrame de entrada
+            column (str): Columna a dividir
+            delimiter (str): Carácter delimitador
+            new_columns (list, opcional): Nombres opcionales para las nuevas columnas
+            show (int): Control de visualización
+                0: No mostrar, -1: Mostrar todo, n: Mostrar las primeras n filas
         
         Returns:
-            DataFrame con las nuevas columnas añadidas
+            pd.DataFrame: DataFrame con las nuevas columnas añadidas
+            
+        Example:
+            >>> df = ConvertOperations.split_string_column(df, 'nombre_completo', ' ')
+            >>> nuevas_columnas = ['nombre', 'apellido']
+            >>> df = ConvertOperations.split_string_column(df, 'nombre_completo', ' ', new_columns=nuevas_columnas)
         """
         try:
             if not isinstance(df, pd.DataFrame):
@@ -258,29 +305,30 @@ class ConvertOperations:
             
         except Exception as e:
             print(f"Error al dividir columna de strings: {e}")
-            raise     
-
-
+            raise
+    
+    @staticmethod
     def sort_by(df, columns, ascending=True, show=0):
         """
         Ordena un DataFrame por una o varias columnas.
-
-        Parámetros:
-        - df (pd.DataFrame): DataFrame de entrada a ordenar.
-        - columns (str o list): Nombre(s) de columna(s) para ordenar.
-        - ascending (bool o list, opcional): Orden ascendente (True) o descendente (False).
-          Puede ser un booleano único o una lista que corresponda a cada columna.
-          Por defecto True.
-        - show (int, opcional): Control de impresión:
-          0 = no imprimir,
-          >0 imprimir las primeras n filas,
-          -1 imprimir todo.
-
-        Retorna:
-        - pd.DataFrame ordenado según las columnas indicadas.
-
-        Lanza:
-        - TypeError si los argumentos no tienen el tipo esperado.
+        
+        Args:
+            df (pd.DataFrame): DataFrame de entrada a ordenar
+            columns (str o list): Nombre(s) de columna(s) para ordenar
+            ascending (bool o list, opcional): Orden ascendente (True) o descendente (False)
+                Puede ser un booleano único o una lista que corresponda a cada columna
+            show (int, opcional): Control de impresión
+                0: no imprimir, >0: imprimir las primeras n filas, -1: imprimir todo
+        
+        Returns:
+            pd.DataFrame: DataFrame ordenado según las columnas indicadas
+            
+        Raises:
+            TypeError: Si los argumentos no tienen el tipo esperado
+            
+        Example:
+            >>> df = ConvertOperations.sort_by(df, 'fecha', ascending=False)
+            >>> df = ConvertOperations.sort_by(df, ['departamento', 'salario'], ascending=[True, False])
         """
         try:
             if not isinstance(df, pd.DataFrame):
@@ -308,16 +356,21 @@ class ConvertOperations:
     @staticmethod
     def clean_date_format(df, column, format_output='%Y-%m-%d', show=0):
         """
-        Limpia el formato de una columna de fecha, removiendo la hora si es 00:00:00.
+        Limpia y formatea columnas de fecha, removiendo horas innecesarias.
         
         Args:
-            df: DataFrame
-            column: str - Columna de fecha a limpiar
-            format_output: str - Formato de salida deseado (por defecto: '%Y-%m-%d')
-            show: int - Mostrar las primeras filas (0: no mostrar, -1: mostrar todo, n: mostrar n filas)
+            df (pd.DataFrame): DataFrame a procesar
+            column (str): Columna de fecha
+            format_output (str): Formato de salida deseado (por defecto: '%Y-%m-%d')
+            show (int): Control de visualización
+                0: No mostrar, -1: Mostrar todo, n: Mostrar las primeras n filas
         
         Returns:
-            DataFrame con la columna de fecha formateada
+            pd.DataFrame: DataFrame con la columna de fecha formateada
+            
+        Example:
+            >>> df = ConvertOperations.clean_date_format(df, 'fecha_ingreso')
+            >>> df = ConvertOperations.clean_date_format(df, 'fecha_nacimiento', '%d/%m/%Y')
         """
         try:
             if not isinstance(df, pd.DataFrame):
@@ -351,16 +404,21 @@ class ConvertOperations:
     @staticmethod
     def fill_nulls(df, column, value, show=0):
         """
-        Reemplaza los valores nulos (None/NaN) de una columna por el valor especificado.
-
+        Reemplaza valores nulos en una columna con un valor específico.
+        
         Args:
-            df: DataFrame
-            column: str - Columna a modificar
-            value: cualquier tipo - Valor para reemplazar los nulos
-            show: int - Mostrar las primeras filas (0: no mostrar, -1: mostrar todo, n: mostrar n filas)
-
+            df (pd.DataFrame): DataFrame a modificar
+            column (str): Columna con valores nulos
+            value (cualquier tipo): Valor de reemplazo
+            show (int): Control de visualización
+                0: No mostrar, -1: Mostrar todo, n: Mostrar las primeras n filas
+        
         Returns:
-            DataFrame con la columna modificada
+            pd.DataFrame: DataFrame con la columna modificada
+            
+        Example:
+            >>> df = ConvertOperations.fill_nulls(df, 'edad', 0)
+            >>> df = ConvertOperations.fill_nulls(df, 'departamento', 'No especificado')
         """
         try:
             if not isinstance(df, pd.DataFrame):

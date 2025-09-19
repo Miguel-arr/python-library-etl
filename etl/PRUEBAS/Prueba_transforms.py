@@ -7,10 +7,11 @@ import pandas as pd
 
 def test_mysql_connection():
     db_params = {
-        "db_type": "postgresql",
-        "user" : "postgres",
-        "password": "admin",           
-        "database": "ventas"   
+        "db_type": "oracle",
+        "user" : "USER_MIGUEL",
+        "password": "Miguel99",           
+        "database": "ventas",
+        "service_name": "xe" 
     }
 
     db_loader = DB_Extractor(**db_params)
