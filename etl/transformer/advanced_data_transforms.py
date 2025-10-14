@@ -821,3 +821,81 @@ class TransformOperations:
         except Exception as e:
             print(f"Error al agrupar y promediar: {e}")
             raise
+
+    @staticmethod
+    def filter_by_list_length(df, columna, longitud=None, keep_in=True, show=0):
+        """
+        Filtra un DataFrame según la longitud de una columna que contiene listas o arrays.
+
+        Parámetros:
+        -----------
+        df : pd.DataFrame
+            DataFrame de entrada.
+        columna : str
+            Nombre de la columna que contiene listas o arrays.
+        longitud : int o list, opcional
+            Longitud o lista de longitudes permitidas. 
+            Ej: 1 -> solo listas de tamaño 1
+                [2,3] -> listas de tamaño 2 o 3
+        keep_in : bool
+            Si True, mantiene solo las longitudes especificadas.
+            Si False, excluye esas longitudes.
+        show : int
+            Control de visualización de resultados.
+            0 = no mostrar
+            >0 = mostrar n filas
+            -1 = mostrar todas
+
+        Retorna:
+        --------
+        pd.DataFrame
+            DataFrame filtrado.
+
+        Ejemplo:
+        --------
+        >>> df = pd.DataFrame({
+        ...     "id": [1,2,3,4],
+        ...     "valores": [[10], [20,30], [40,50,60], []]
+        ... })
+        >>> TransformOperations.filtrar_por_longitud_lista(df, "valores", longitud=2, show=-1)
+        id   valores
+        1   2  [20, 30]
+        """
+        try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            if columna not in df.columns:
+                raise ValueError(f"La columna '{columna}' no existe en el DataFrame")
+            
+            # Convertir longitud a lista si es un solo número
+            if isinstance(longitud, int):
+                longitudes = [longitud]
+            elif isinstance(longitud, (list, tuple, set)):
+                longitudes = list(longitud)
+            elif longitud is None:
+                raise ValueError("Debe especificar al menos una longitud para filtrar")
+            else:
+                raise TypeError("'longitud' debe ser un número entero o lista de enteros")
+            
+            # Crear serie de longitudes
+            longitudes_col = df[columna].apply(lambda x: len(x) if isinstance(x, (list, tuple)) else None)
+            
+            # Filtro
+            if keep_in:
+                mask = longitudes_col.isin(longitudes)
+            else:
+                mask = ~longitudes_col.isin(longitudes)
+
+            df_filtrado = df[mask].copy()
+
+            # Mostrar resultado si se solicita
+            if show > 0:
+                print(df_filtrado.head(show))
+            elif show == -1:
+                print(df_filtrado)
+
+            return df_filtrado
+        
+        except Exception as e:
+            print(f"Error al filtrar por longitud de lista: {e}")
+            raise

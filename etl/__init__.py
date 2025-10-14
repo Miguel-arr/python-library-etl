@@ -39,7 +39,6 @@ __all__ = [
     "extractors",
     "transformer",
     "loaders",
-    "colombia_saludable",
 
     # Extractors
     "DB_Extractor",

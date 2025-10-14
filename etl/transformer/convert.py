@@ -36,71 +36,100 @@ class ConvertOperations:
             raise
     
     @staticmethod
+    @staticmethod
     def convert_column_type(df, columns, dtype, show=0):
         """
-        Convierte el tipo de una o varias columnas a un tipo de dato específico.
-        
+        Convierte el tipo de una o varias columnas a un tipo de dato específico,
+        soportando pandas, numpy y mapeo a tipos de PostgreSQL.
+
         Args:
             df (pd.DataFrame): DataFrame de pandas a transformar
             columns (str o list): Nombre(s) de la(s) columna(s) a convertir
             dtype (str o dict): Tipo de dato objetivo o diccionario con mapeo de columnas
-                Tipos soportados: 'int', 'float', 'str', 'datetime', 'category'
+                Tipos soportados:
+                    - Pandas: 'int', 'float', 'str', 'datetime', 'category', 'bool', 'object'
+                    - Postgres: 'text', 'integer', 'bigint', 'numeric', 'boolean', 'uuid', 'serial'
             show (int): Control de visualización del resultado
                 0: No mostrar, -1: Mostrar todo, n: Mostrar las primeras n filas
-        
+
         Returns:
             pd.DataFrame: DataFrame con las columnas convertidas
-            
-        Raises:
-            TypeError: Si los parámetros no son del tipo esperado
-            ValueError: Si las columnas especificadas no existen en el DataFrame
-            
-        Example:
-            >>> df = ConvertOperations.convert_column_type(df, 'fecha', 'datetime')
-            >>> df = ConvertOperations.convert_column_type(df, ['col1', 'col2'], 'int')
-            >>> dtype_map = {'col1': 'int', 'col2': 'float'}
-            >>> df = ConvertOperations.convert_column_type(df, ['col1', 'col2'], dtype_map)
         """
         try:
-            # Validación de parámetros
             if not isinstance(df, pd.DataFrame):
                 raise TypeError("El primer argumento debe ser un DataFrame")
             if not isinstance(columns, (str, list)):
                 raise TypeError("columns debe ser un string o una lista")
             if not isinstance(dtype, (str, dict)):
                 raise TypeError("dtype debe ser un string o un diccionario")
-            
+
             # Normalización de parámetros
             if isinstance(columns, str):
                 columns = [columns]
-                
             if isinstance(dtype, str):
                 dtype = {col: dtype for col in columns}
-            
-            # Conversión de tipos
+
+            # Mapeo de tipos Postgres a Pandas/Python
+            pg_type_map = {
+                "text": str,
+                "varchar": str,
+                "char": str,
+                "integer": "int",
+                "bigint": "int",
+                "smallint": "int",
+                "serial": "int",
+                "bigserial": "int",
+                "numeric": "float",
+                "decimal": "float",
+                "real": "float",
+                "double precision": "float",
+                "boolean": "bool",
+                "uuid": "uuid",
+                "date": "datetime",
+                "timestamp": "datetime",
+                "timestamptz": "datetime"
+            }
+
             for col, target_type in dtype.items():
                 if col not in df.columns:
                     raise ValueError(f"La columna '{col}' no existe en el DataFrame")
-                
-                if target_type == 'datetime':
-                    df[col] = pd.to_datetime(df[col], errors='coerce')
-                elif target_type == 'category':
-                    df[col] = df[col].astype('category')
-                elif target_type == 'str':
+
+                # Si es un tipo de Postgres, lo traducimos
+                if target_type in pg_type_map:
+                    target_type = pg_type_map[target_type]
+
+                # Conversión de tipos
+                if target_type == "datetime":
+                    df[col] = pd.to_datetime(df[col], errors="coerce")
+                elif target_type == "category":
+                    df[col] = df[col].astype("category")
+                elif target_type == "str":
                     df[col] = df[col].astype(str)
-                elif target_type in ['int', 'float']:
-                    df[col] = pd.to_numeric(df[col], errors='coerce').astype(target_type)
+                elif target_type == "bool":
+                    df[col] = df[col].astype(bool)
+                elif target_type == "int" or target_type == int:
+                    df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
+                    df[col] = df[col].apply(lambda x: int(x) if pd.notnull(x) else None)
+                elif target_type == "float" or target_type == float:
+                    df[col] = pd.to_numeric(df[col], errors="coerce").astype(float)
+                elif target_type == "uuid":
+                    df[col] = df[col].apply(
+                        lambda x: str(id.UUID(str(x))) if pd.notnull(x) else None
+                    )
+                elif target_type == "object":
+                    df[col] = df[col].astype(object)
                 else:
+                    # fallback a lo que soporte pandas
                     df[col] = df[col].astype(target_type)
-            
+
             # Mostrar resultados si show está habilitado
             if show > 0:
                 print(ConvertOperations.head(df, show))
             elif show == -1:
                 print(ConvertOperations.head(df, len(df)))
-            
+
             return df
-            
+
         except Exception as e:
             print(f"Error al convertir tipos de columna: {e}")
             raise

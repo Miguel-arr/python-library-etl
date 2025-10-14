@@ -101,17 +101,6 @@ class HeaderOperations:
 
     @staticmethod
     def drop_header(df, columns_to_drop, show=0):
-        """
-        Elimina una o más columnas del DataFrame basado en sus nombres.
-        
-        Args:
-            df: DataFrame de pandas
-            columns_to_drop: Nombre individual (string) o lista de nombres de columnas a eliminar
-            show: Número de filas a mostrar después de la eliminación (0: no mostrar, >0: n filas, -1: todas)
-        
-        Returns:
-            DataFrame con las columnas especificadas eliminadas
-        """
         try:
             if not isinstance(df, pd.DataFrame):
                 raise TypeError("df debe ser un DataFrame de pandas")
@@ -181,4 +170,77 @@ class HeaderOperations:
             return df
         except Exception as e:
             print(f"Error al agregar sufijo a los encabezados: {e}")
+            raise
+
+    @staticmethod
+    def get_column_names(df, print_result=True):
+        """
+        Muestra todos los nombres de columnas de un DataFrame.
+        
+        Args:
+            df: DataFrame de pandas
+            print_result: Si es True, imprime el resultado; si es False, solo lo retorna
+        
+        Returns:
+            Lista con los nombres de todas las columnas
+        """
+        try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            
+            column_names = df.columns.tolist()
+            
+            if print_result:
+                print(f"📋 COLUMNAS DISPONIBLES ({len(column_names)} columnas):")
+                for i, col in enumerate(column_names, 1):
+                    print(f"  {i}. {col}")
+            
+            return column_names
+            
+        except Exception as e:
+            error_msg = f"Error al obtener nombres de columnas: {e}"
+            if print_result:
+                print(error_msg)
+            return []
+
+    @staticmethod
+    def show_all_columns(df):
+        """
+        Versión simplificada que solo muestra los nombres de columnas.
+        
+        Args:
+            df: DataFrame de pandas
+        """
+        return HeaderOperations.get_column_names(df, print_result=True)
+    
+    @staticmethod
+    def add_sequential_index(df, column_name="index", start=1, show=0):
+        """
+        Agrega una columna de índice secuencial (1, 2, 3, ...) al DataFrame.
+
+        Args:
+            df: DataFrame de pandas
+            column_name: Nombre de la nueva columna (por defecto 'index')
+            start: Número inicial para el índice (por defecto 1)
+            show: Número de filas a mostrar después del cambio 
+                  (0: no mostrar, >0: n filas, -1: todas)
+
+        Returns:
+            DataFrame con la nueva columna de índice secuencial
+        """
+        try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+
+            df[column_name] = range(start, start + len(df))
+
+            if show > 0:
+                print(HeaderOperations.head(df, show))
+            elif show == -1:
+                print(HeaderOperations.head(df, len(df)))
+
+            return df
+
+        except Exception as e:
+            print(f"Error al agregar índice secuencial: {e}")
             raise

@@ -65,13 +65,3 @@ class XLSXExtractor:
             raise
 
 
-ruta = r"C:\Users\rodri\Desktop\fecha.xlsx"
-
-extractor = XLSXExtractor(ruta)
-
-print("Hojas disponibles:", extractor.get_sheet_names())
-
-extractor.preview_data(sheet_name="Sheet1", n=5)
-
-df = extractor.read_sheet(sheet_name="Sheet1")
-extractor.toxlsx(df, filename=r"C:\Users\rodri\Desktop\fecha_guardado.xlsx", sheet_name="Sheet1")

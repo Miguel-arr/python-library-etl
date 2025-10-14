@@ -219,17 +219,6 @@ class BasicsTransformOperations:
     @staticmethod
     @validate_params(df_type=True, lambda_type=True, n_type=True)
     def filter_by_condition(df, lambda_func, show=0):
-        """
-        Filtra filas del DataFrame basado en una condición definida por una función lambda.
-        
-        Args:
-            df: DataFrame de pandas
-            lambda_func: Función lambda que devuelve True/False para cada fila
-            show: Número de filas a mostrar después de la operación (0: no mostrar, >0: n filas, -1: todas)
-        
-        Returns:
-            DataFrame filtrado con solo las filas que cumplen la condición
-        """
         try:
             filtered_df = df[df.apply(lambda_func, axis=1)]
             if show > 0:
@@ -241,146 +230,10 @@ class BasicsTransformOperations:
             print(f"Error al filtrar las filas: {e}")
             raise
 
-    @staticmethod
-    def sort_columns(df, columns, ascending=True):
-        """
-        Ordena el DataFrame por una o múltiples columnas especificadas.
-        
-        Args:
-            df: DataFrame de pandas
-            columns: Columna única (string) o lista de columnas para ordenar
-            ascending: Dirección del ordenamiento (True: ascendente, False: descendente)
-        
-        Returns:
-            DataFrame ordenado por las columnas especificadas
-        """
-        try:
-            # Verificar si la columna existe en el DataFrame
-            if isinstance(columns, str):  # Si es un solo nombre de columna
-                columns = [columns]  # Convertirlo en una lista
-            
-            missing_columns = [col for col in columns if col not in df.columns]
-            if missing_columns:
-                raise ValueError(f"Las siguientes columnas no existen en el DataFrame: {missing_columns}")
-            # Ordenar el DataFrame
-            sorted_df = df.sort_values(by=columns, ascending=ascending)
-            return sorted_df
-        
-        except Exception as e:
-            print(f"Error al ordenar las filas: {e}")
-            raise
 
     @staticmethod
     @validate_params(df_type=True, columns_type=True, n_type=True)
-    def convertir_columna_a_lista(df, columna, delimitador=',', nueva_columna=None, show=0):
-        """
-        Convierte una columna de strings o enteros en una lista de valores separados por delimitador.
-        
-        Args:
-            df: DataFrame de pandas
-            columna: Nombre de la columna a convertir
-            delimitador: Caracter delimitador para separar los valores (por defecto ',')
-            nueva_columna: Nombre para la nueva columna de lista (si es None, usa nombre_original_lista)
-            show: Mostrar resultados (0: no mostrar, >0: n filas, -1: todas las filas)
-        
-        Returns:
-            DataFrame con nueva columna que contiene listas de valores
-        """
-        try:
-            if columna not in df.columns:
-                raise ValueError(f"La columna '{columna}' no existe en el DataFrame")
-            
-            # Crear nombre para la nueva columna
-            if nueva_columna is None:
-                nueva_columna = f"{columna}_lista"
-            
-            # Convertir a string por si hay enteros y luego split
-            df_copy = df.copy()
-            df_copy[nueva_columna] = df_copy[columna].astype(str).str.split(delimitador)
-            
-            # Mostrar resultados si está habilitado
-            if show > 0:
-                print(f"=== DESPUÉS DE CONVERTIR '{columna}' A LISTA ===")
-                print(f"Columnas: {list(df_copy.columns)}")
-                print(BasicsTransformOperations.show_head(df_copy, show))
-                print("\n")
-            elif show == -1:
-                print(f"=== DESPUÉS DE CONVERTIR '{columna}' A LISTA ===")
-                print(f"Columnas: {list(df_copy.columns)}")
-                print(BasicsTransformOperations.show_head(df_copy, len(df_copy)))
-                print("\n")
-            
-            return df_copy
-            
-        except Exception as e:
-            print(f"Error al convertir columna a lista: {e}")
-            raise
-
-    @staticmethod
-    @validate_params(df_type=True, columns_type=True, n_type=True)
-    def explotar_columna_lista(df, columna_lista, nueva_columna=None, mantener_original=True, show=0):
-        """
-        Expande una columna que contiene listas en múltiples filas (operación explode).
-        Cada elemento de la lista se convierte en una fila individual.
-        
-        Args:
-            df: DataFrame con la columna de listas
-            columna_lista: Nombre de la columna que contiene las listas
-            nueva_columna: Nombre para la nueva columna (si es None, usa nombre original sin '_lista')
-            mantener_original: Si True, mantiene la columna original de listas
-            show: Mostrar resultados (0: no mostrar, >0: n filas, -1: todas las filas)
-        
-        Returns:
-            DataFrame normalizado con una fila por cada elemento de las listas
-        """
-        try:
-            if columna_lista not in df.columns:
-                raise ValueError(f"La columna '{columna_lista}' no existe en el DataFrame")
-            
-            # Verificar que la columna contenga listas
-            if not df[columna_lista].apply(lambda x: isinstance(x, list)).any():
-                raise ValueError(f"La columna '{columna_lista}' no contiene listas válidas")
-            
-            # Crear nombre para la nueva columna
-            if nueva_columna is None:
-                nueva_columna = columna_lista.replace('_lista', '')
-            
-            # Crear copia para no modificar el original
-            df_copy = df.copy()
-            
-            # Hacer explode de la columna de lista
-            df_explode = df_copy.explode(columna_lista)
-            
-            # Crear nueva columna con valores limpios
-            df_explode[nueva_columna] = df_explode[columna_lista].astype(str).str.strip()
-            
-            # Eliminar columna temporal si no se quiere mantener
-            if not mantener_original:
-                df_explode = df_explode.drop(columns=[columna_lista])
-            
-            # Mostrar resultados si está habilitado
-            if show > 0:
-                print(f"=== DESPUÉS DE EXPLODE DE '{columna_lista}' ===")
-                print(f"Filas originales: {len(df)}, Filas finales: {len(df_explode)}")
-                print(f"Columnas: {list(df_explode.columns)}")
-                print(BasicsTransformOperations.show_head(df_explode, show))
-                print("\n")
-            elif show == -1:
-                print(f"=== DESPUÉS DE EXPLODE DE '{columna_lista}' ===")
-                print(f"Filas originales: {len(df)}, Filas finales: {len(df_explode)}")
-                print(f"Columnas: {list(df_explode.columns)}")
-                print(BasicsTransformOperations.show_head(df_explode, len(df_explode)))
-                print("\n")
-            
-            return df_explode
-            
-        except Exception as e:
-            print(f"Error al explotar columna lista: {e}")
-            raise
-
-    @staticmethod
-    @validate_params(df_type=True, columns_type=True, n_type=True)
-    def normalizar_columna_con_delimitador(df, columna, delimitador=',', mantener_original=True, show=0):
+    def normalize_delimited_column(df, columna, delimitador=',', mantener_original=True, show=0):
         """
         Proceso completo de normalización: convierte columna con delimitadores a lista y luego expande.
         
@@ -413,3 +266,121 @@ class BasicsTransformOperations:
         except Exception as e:
             print(f"Error en normalización completa: {e}")
             raise
+
+
+    @staticmethod
+    def sort_columns(df, columns, ascending=True):
+        """
+        Ordena el DataFrame por una o múltiples columnas especificadas.
+        
+        Args:
+            df: DataFrame de pandas
+            columns: Columna única (string) o lista de columnas para ordenar
+            ascending: Dirección del ordenamiento (True: ascendente, False: descendente)
+        
+        Returns:
+            DataFrame ordenado por las columnas especificadas
+        """
+        try:
+            # Verificar si la columna existe en el DataFrame
+            if isinstance(columns, str):  # Si es un solo nombre de columna
+                columns = [columns]  # Convertirlo en una lista
+            
+            missing_columns = [col for col in columns if col not in df.columns]
+            if missing_columns:
+                raise ValueError(f"Las siguientes columnas no existen en el DataFrame: {missing_columns}")
+            # Ordenar el DataFrame
+            sorted_df = df.sort_values(by=columns, ascending=ascending)
+            return sorted_df
+        
+        except Exception as e:
+            print(f"Error al ordenar las filas: {e}")
+            raise
+
+    @staticmethod
+    @validate_params(df_type=True, columns_type=True, n_type=True)
+    def convert_column_to_list(df, columna, delimitador=';', nueva_columna=None, show=0):
+        try:
+            if columna not in df.columns:
+                raise ValueError(f"La columna '{columna}' no existe en el DataFrame")
+            
+            # Crear nombre para la nueva columna
+            if nueva_columna is None:
+                nueva_columna = f"{columna}_lista"
+            
+            # Convertir a string por si hay enteros y luego split
+            df_copy = df.copy()
+            df_copy[nueva_columna] = df_copy[columna].astype(str).str.split(delimitador)
+            
+            # Mostrar resultados si está habilitado
+            if show > 0:
+                print(f"=== DESPUÉS DE CONVERTIR '{columna}' A LISTA ===")
+                print(f"Columnas: {list(df_copy.columns)}")
+                print(BasicsTransformOperations.show_head(df_copy, show))
+                print("\n")
+            elif show == -1:
+                print(f"=== DESPUÉS DE CONVERTIR '{columna}' A LISTA ===")
+                print(f"Columnas: {list(df_copy.columns)}")
+                print(BasicsTransformOperations.show_head(df_copy, len(df_copy)))
+                print("\n")
+            
+            return df_copy
+            
+        except Exception as e:
+            print(f"Error al convertir columna a lista: {e}")
+            raise
+
+    @staticmethod
+    @validate_params(df_type=True, columns_type=True, n_type=True)
+    def explode_column_list(df, columna_lista, mantener_original=True, show=0):
+        """
+        Expande una columna que contiene listas en múltiples filas (operación explode).
+        Cada elemento de la lista se convierte en una fila individual.
+        
+        Args:
+            df: DataFrame con la columna de listas
+            columna_lista: Nombre de la columna que contiene las listas
+            mantener_original: No aplica ahora, siempre se reemplaza la columna original
+            show: Mostrar resultados (0: no mostrar, >0: n filas, -1: todas las filas)
+        
+        Returns:
+            DataFrame normalizado con una fila por cada elemento de las listas
+        """
+        try:
+            if columna_lista not in df.columns:
+                raise ValueError(f"La columna '{columna_lista}' no existe en el DataFrame")
+            
+            # Verificar que la columna contenga listas
+            if not df[columna_lista].apply(lambda x: isinstance(x, list)).any():
+                raise ValueError(f"La columna '{columna_lista}' no contiene listas válidas")
+            
+            # Crear copia para no modificar el original
+            df_copy = df.copy()
+            
+            # Hacer explode de la columna de lista
+            df_explode = df_copy.explode(columna_lista)
+            
+            # Limpiar los valores en la MISMA columna
+            df_explode[columna_lista] = df_explode[columna_lista].astype(str).str.strip()
+            
+            # Mostrar resultados si está habilitado
+            if show > 0:
+                print(f"=== DESPUÉS DE EXPLODE DE '{columna_lista}' ===")
+                print(f"Filas originales: {len(df)}, Filas finales: {len(df_explode)}")
+                print(f"Columnas: {list(df_explode.columns)}")
+                print(BasicsTransformOperations.show_head(df_explode, show))
+                print("\n")
+            elif show == -1:
+                print(f"=== DESPUÉS DE EXPLODE DE '{columna_lista}' ===")
+                print(f"Filas originales: {len(df)}, Filas finales: {len(df_explode)}")
+                print(f"Columnas: {list(df_explode.columns)}")
+                print(BasicsTransformOperations.show_head(df_explode, len(df_explode)))
+                print("\n")
+            
+            return df_explode
+            
+        except Exception as e:
+            print(f"Error al explotar columna lista: {e}")
+            raise
+
+
