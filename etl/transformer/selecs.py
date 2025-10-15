@@ -1,208 +1,232 @@
 import pandas as pd
 from tabulate import tabulate
-
-
+from typing import Union, List, Set, Tuple, Callable, Any, Optional
 
 class DataSelect:
-    # Asignamos la clase BasicsTransformOperations para usar sus operaciones si se requiere
-  
+    """
+    Clase para realizar operaciones de selección y filtrado de datos en DataFrames de pandas.
+    Todos los métodos son estáticos, con validaciones internas, manejo de errores
+    y opción de visualización controlada.
+    """
 
+    # ======================================================
+    #  VISUALIZACIÓN
+    # ======================================================
     @staticmethod
-    def head2(df, n=5, print_result=True):
-        # Devuelve o imprime las primeras n filas del DataFrame.
+    def head(df, n=5, print_result=True):
+        """Muestra las primeras n filas del DataFrame con formato tabular."""
         try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            if not isinstance(n, int) or n <= 0:
+                raise ValueError("n debe ser un entero positivo")
+
             df_head = df.head(n)
             result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
+            if print_result:
+                print(result)
             return result
         except Exception as e:
             print(f"Error al obtener las primeras {n} filas: {e}")
             raise
 
-    @staticmethod
-    def _validate_common(df, field, complement, show):
-        """
-        Función auxiliar para validar parámetros comunes en los filtros.
-        Parámetros:
-            df (pd.DataFrame): DataFrame a validar.
-            field (str): Nombre de la columna a validar.
-            complement (bool): Si se debe invertir la selección.
-            show (int): Número de filas a mostrar después del filtrado.
-        """
-        if not isinstance(df, pd.DataFrame):
-            raise TypeError("df debe ser un DataFrame de pandas")
-        if not isinstance(field, str):
-            raise TypeError("field debe ser un string")
-        if not isinstance(complement, bool):
-            raise TypeError("complement debe ser un booleano")
-        if not isinstance(show, int) or show < -1:
-            raise ValueError("show debe ser un entero mayor o igual a -1")
-        if field not in df.columns:
-            raise ValueError(f"El campo '{field}' no existe en el DataFrame.")
-
+    # ======================================================
+    #  FILTROS GENERALES
+    # ======================================================
     @staticmethod
     def filter_by_operation(df, field, value, op, complement=False, show=0):
-        """
-        Filtra filas aplicando una operación lógica personalizada.
-        Parámetros:
-            df (pd.DataFrame): DataFrame a filtrar.
-            field (str): Columna del DataFrame sobre la cual aplicar la operación.
-            value (cualquier): Valor con el cual se compara.
-            op (callable): Función que toma dos argumentos y devuelve True/False.
-            complement (bool): Si True, devuelve filas donde la condición NO se cumple.
-            show (int): Cuántas filas mostrar del resultado (0 = no mostrar).
-        Retorna:
-            pd.DataFrame: DataFrame filtrado.
-        """
+        """Filtra filas aplicando una operación lógica personalizada."""
         try:
-            # Validamos los parámetros comunes y que op sea callable
-            DataSelect._validate_common(df, field, complement, show)
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            if field not in df.columns:
+                raise ValueError(f"El campo '{field}' no existe en el DataFrame")
             if not callable(op):
                 raise TypeError("op debe ser una función callable")
 
-            # Aplicamos la función op fila por fila
             mask = df[field].apply(lambda x: op(x, value))
-            # Si complement es True, invertimos la máscara
             result = df[~mask] if complement else df[mask]
 
-            # Si show es distinto de 0, mostramos las primeras filas del resultado
-            if show:
-                print(DataSelect.head2(result, show if show > 0 else len(result)))
+            if show != 0:
+                rows = show if show > 0 else len(result)
+                DataSelect.head(result, rows)
 
-            return result
+            return result.copy()
         except Exception as e:
-            print(f"Error en select_op: {e}")
+            print(f"Error en filter_by_operation: {e}")
             raise
 
     @staticmethod
     def filter_equal(df, field, value, complement=False, show=0):
-        """
-        Filtra filas donde el valor en 'field' es igual a 'value'.
-        Parámetros y retornos similares a filter_by_operation.
-        """
+        """Filtra filas donde el valor del campo es igual al valor dado."""
         try:
-            DataSelect._validate_common(df, field, complement, show)
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            if field not in df.columns:
+                raise ValueError(f"El campo '{field}' no existe en el DataFrame")
 
-            # Creamos máscara booleana donde el campo es igual al valor dado
             mask = df[field] == value
-            # Invertimos si complement es True
             result = df[~mask] if complement else df[mask]
 
-            if show:
-                print(DataSelect.head2(result, show if show > 0 else len(result)))
+            if show != 0:
+                rows = show if show > 0 else len(result)
+                DataSelect.head(result, rows)
 
-            return result
+            return result.copy()
         except Exception as e:
-            print(f"Error en select_eq: {e}")
+            print(f"Error en filter_equal: {e}")
             raise
 
     @staticmethod
     def filter_not_equal(df, field, value, complement=False, show=0):
-        """
-        Filtra filas donde el valor en 'field' NO es igual a 'value'.
-        Aquí simplemente usamos filter_equal pero invertimos el parámetro complement.
-        """
-        # Complementamos complement para invertir la selección en filter_equal
-        return DataSelect.filter_equal(df, field, value, not complement, show)
+        """Filtra filas donde el valor del campo NO es igual al valor dado."""
+        try:
+            return DataSelect.filter_equal(df, field, value, not complement, show)
+        except Exception as e:
+            print(f"Error en filter_not_equal: {e}")
+            raise
 
     @staticmethod
     def filter_in_range(df, field, minv, maxv, complement=False, show=0):
-        """
-        Filtra filas donde el valor del campo está dentro del rango [minv, maxv].
-        Parámetros:
-            minv (int|float): Valor mínimo del rango.
-            maxv (int|float): Valor máximo del rango.
-        """
+        """Filtra filas donde el valor del campo está dentro del rango [minv, maxv]."""
         try:
-            DataSelect._validate_common(df, field, complement, show)
-            # Validamos que minv y maxv sean numéricos
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            if field not in df.columns:
+                raise ValueError(f"El campo '{field}' no existe en el DataFrame")
             if not (isinstance(minv, (int, float)) and isinstance(maxv, (int, float))):
                 raise TypeError("minv y maxv deben ser numéricos")
+            if minv > maxv:
+                raise ValueError("minv no puede ser mayor que maxv")
 
-            # Máscara donde los valores están dentro del rango (inclusive)
             mask = (df[field] >= minv) & (df[field] <= maxv)
             result = df[~mask] if complement else df[mask]
 
-            if show:
-                print(DataSelect.head2(result, show if show > 0 else len(result)))
+            if show != 0:
+                rows = show if show > 0 else len(result)
+                DataSelect.head(result, rows)
 
-            return result
+            return result.copy()
         except Exception as e:
-            print(f"Error en select_range_open: {e}")
+            print(f"Error en filter_in_range: {e}")
             raise
 
     @staticmethod
     def filter_contains(df, field, value, complement=False, show=0):
-        """
-        Filtra filas donde el valor de 'field' contiene la cadena 'value'.
-        Parámetros:
-            value (str): Subcadena que debe contener el valor del campo.
-        """
+        """Filtra filas donde el campo contiene la subcadena dada."""
         try:
-            DataSelect._validate_common(df, field, complement, show)
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            if field not in df.columns:
+                raise ValueError(f"El campo '{field}' no existe en el DataFrame")
             if not isinstance(value, str):
                 raise TypeError("value debe ser un string")
 
-            # Convertimos todo a string para evitar errores y aplicamos contains
-            mask = df[field].astype(str).str.contains(value, na=False)
+            mask = df[field].astype(str).str.contains(value, na=False, regex=False)
             result = df[~mask] if complement else df[mask]
 
-            if show:
-                print(DataSelect.head2(result, show if show > 0 else len(result)))
+            if show != 0:
+                rows = show if show > 0 else len(result)
+                DataSelect.head(result, rows)
 
-            return result
+            return result.copy()
         except Exception as e:
-            print(f"Error en select_contains: {e}")
+            print(f"Error en filter_contains: {e}")
             raise
 
     @staticmethod
     def filter_in_list(df, field, values, complement=False, show=0):
-        """
-        Filtra filas donde el valor en 'field' está dentro de una lista (o set, tupla) de valores.
-        Parámetros:
-            values (list|set|tuple): Colección de valores aceptados.
-        """
+        """Filtra filas donde el valor del campo está en una lista o conjunto."""
         try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
             if field not in df.columns:
-                raise ValueError(f"El campo '{field}' no existe en el DataFrame.")
+                raise ValueError(f"El campo '{field}' no existe en el DataFrame")
             if not isinstance(values, (list, set, tuple)):
-                raise ValueError("El parámetro 'values' debe ser una lista, conjunto o tupla.")
+                raise TypeError("values debe ser una lista, conjunto o tupla")
 
             mask = df[field].isin(values)
             result = df[~mask] if complement else df[mask]
 
-            if show:
-                print(DataSelect.head2(result, show if show > 0 else len(result)))
+            if show != 0:
+                rows = show if show > 0 else len(result)
+                DataSelect.head(result, rows)
 
-            return result
+            return result.copy()
         except Exception as e:
-            print(f"Error en select_in: {e}")
+            print(f"Error en filter_in_list: {e}")
             raise
 
     @staticmethod
     def filter_is_null(df, field, complement=False, show=0):
-        """
-        Filtra filas donde el valor del campo es NaN o None.
-        """
+        """Filtra filas donde el campo es nulo (NaN o None)."""
         try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
             if field not in df.columns:
-                raise ValueError(f"El campo '{field}' no existe en el DataFrame.")
+                raise ValueError(f"El campo '{field}' no existe en el DataFrame")
 
             mask = df[field].isna()
             result = df[~mask] if complement else df[mask]
 
-            if show:
-                print(DataSelect.head2(result, show if show > 0 else len(result)))
+            if show != 0:
+                rows = show if show > 0 else len(result)
+                DataSelect.head(result, rows)
 
-            return result
+            return result.copy()
         except Exception as e:
-            print(f"Error en select_none: {e}")
+            print(f"Error en filter_is_null: {e}")
+            raise
+
+
+
+    # ======================================================
+    #  SELECCIÓN Y VALORES ÚNICOS
+    # ======================================================
+    @staticmethod
+    def unique_values(df, field, show=False):
+        """Devuelve los valores únicos del campo indicado."""
+        try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            if field not in df.columns:
+                raise ValueError(f"El campo '{field}' no existe en el DataFrame")
+
+            unique_vals = df[field].dropna().unique().tolist()
+
+            if show:
+                unique_df = pd.DataFrame({field: unique_vals})
+                DataSelect.head(unique_df, len(unique_df))
+
+            return unique_vals
+        except Exception as e:
+            print(f"Error al obtener valores únicos: {e}")
+            raise
+
+    @staticmethod
+    def select_columns(df, *columns, complement=False, show=0):
+        """Selecciona o excluye columnas del DataFrame."""
+        try:
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            for col in columns:
+                if col not in df.columns:
+                    raise ValueError(f"La columna '{col}' no existe en el DataFrame")
+
+            result = df.drop(columns=list(columns)) if complement else df[list(columns)]
+
+            if show != 0:
+                rows = show if show > 0 else len(result)
+                DataSelect.head(result, rows)
+
+            return result.copy()
+        except Exception as e:
+            print(f"Error al seleccionar columnas: {e}")
             raise
 
     @staticmethod
     def select_not_none(df, field, complement=False, show=0):
-        """
-        Filtra filas donde el valor del campo NO es NaN o None.
-        """
+        """Filtra filas donde el campo NO es nulo."""
         try:
             if field not in df.columns:
                 raise ValueError(f"El campo '{field}' no existe en el DataFrame.")
@@ -211,65 +235,43 @@ class DataSelect:
             result = df[~mask] if complement else df[mask]
 
             if show:
-                print(DataSelect.head2(result, show if show > 0 else len(result)))
+                rows = show if show > 0 else len(result)
+                DataSelect.head2(result, rows)
 
             return result
         except Exception as e:
             print(f"Error en select_not_none: {e}")
             raise
 
-    @staticmethod
-    def unique_values(df, field, show=False):
-        """
-        Devuelve una lista con valores únicos del campo indicado.
-        Parámetros:
-            show (bool): Si es True, imprime todos los valores únicos.
-        Retorna:
-            list: Lista con los valores únicos (sin NaN).
-        """
-        try:
-            if not isinstance(df, pd.DataFrame):
-                raise TypeError("df debe ser un DataFrame de pandas")
-            if not isinstance(field, str):
-                raise TypeError("field debe ser un string")
-            if field not in df.columns:
-                raise ValueError(f"El campo '{field}' no existe en el DataFrame.")
 
-            unique_vals_df = pd.DataFrame({field: df[field].dropna().unique()})
-
-            if show:
-                print(DataSelect.head2(unique_vals_df, len(unique_vals_df)))
-
-            return unique_vals_df[field].tolist()
-        except Exception as e:
-            print(f"Error al obtener valores únicos: {e}")
-            raise
-
-    @staticmethod
-    def select_columns(df, *columns, complement=False, show=0):
-        """
-        Selecciona columnas específicas del DataFrame o excluye si complement es True.
-        Parámetros:
-            *columns (str): Nombres de columnas a seleccionar o excluir.
-            complement (bool): Si True, se excluyen las columnas indicadas.
-            show (int): Cantidad de filas a mostrar del DataFrame resultante.
-        Retorna:
-            pd.DataFrame: DataFrame con columnas seleccionadas o excluidas.
-        """
-        try:
-            if not isinstance(df, pd.DataFrame):
-                raise TypeError("df debe ser un DataFrame de pandas")
-
-            # Seleccionamos o excluimos columnas según complement
-            if complement:
-                result_df = df[[col for col in df.columns if col not in columns]]
-            else:
-                result_df = df[list(columns)]
-
-            if show:
-                print(DataSelect.head2(result_df, show if show > 0 else len(result_df)))
-
-            return result_df
-        except Exception as e:
-            print(f"Error al seleccionar/reordenar columnas: {e}")
-            raise
+# Ejemplo de uso y documentación adicional
+if __name__ == "__main__":
+    """
+    Ejemplo de uso de la clase DataSelect:
+    
+    # Crear DataFrame de ejemplo
+    data = {
+        'name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
+        'age': [25, 30, 35, 40, 45],
+        'email': ['alice@email.com', 'bob@mail.com', None, 'david@email.com', 'eve@mail.com'],
+        'department': ['IT', 'HR', 'IT', 'Finance', 'HR']
+    }
+    df = pd.DataFrame(data)
+    
+    # Ejemplos de uso:
+    print("Primeras 3 filas:")
+    DataSelect.head(df, 3)
+    
+    print("\\nEmpleados de IT:")
+    it_employees = DataSelect.filter_equal(df, 'department', 'IT', show=5)
+    
+    print("\\nEmpleados entre 30 y 40 años:")
+    age_range = DataSelect.filter_in_range(df, 'age', 30, 40, show=5)
+    
+    print("\\nEmails que contienen 'email':")
+    email_filter = DataSelect.filter_contains(df, 'email', 'email', show=5)
+    
+    print("\\nValores únicos de department:")
+    depts = DataSelect.unique_values(df, 'department', show=True)
+    """
+    pass
