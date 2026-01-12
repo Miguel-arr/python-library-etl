@@ -1,4 +1,5 @@
-from etl import TransformOperations, DataSelect, ConvertOperations, BasicsTransformOperations, DB_Extractor, DB_Loader
+from etl import TransformOperations, DataSelect, ConvertOperations, BasicsTransformOperations, DB_Extractor, DB_Loader, HeaderOperations
+import pandas as pd
 
 def database_extract_connection():
     """Configura y retorna la conexión a la base de datos"""
@@ -31,16 +32,18 @@ def extract_data(db_extract):
     print("Extrayendo datos de la tabla CITAS_GENERALES...")
     citas_generales = db_extract.get_table("citas_generales")
     BasicsTransformOperations.show_head(citas_generales, 5)
+  
     
     print("Extrayendo datos de la tabla URGENCIAS...")
     urgencias = db_extract.get_table("urgencias")
     BasicsTransformOperations.show_head(urgencias, 5)
-    
+
     return citas_generales, urgencias
 
 def filter_cirugia_citas(citas_generales):
     """Filtra las citas de cirugía"""
     print("\nFiltrando citas de cirugía...")
+    
     citas_cirugia = DataSelect.filter_equal(
         citas_generales, 
         'diagnostico', 
@@ -58,7 +61,7 @@ def process_datetime_columns(df):
     ConvertOperations.clean_date_format(df, "fecha_atencion", show=0)
     
     # Crear columnas combinadas de fecha y hora
-    funcion_lambda = lambda row: f"{row['fecha_solicitud']} {row['hora_solicitud']}"
+    funcion_lambda = lambda row: f"{row['fecha_solicitud']} {row['hora_solicitud']}"  #Solo concatena las fechas y horas
     BasicsTransformOperations.add_new_column(df, 'fechahora_solicitud', funcion_lambda, 0)
     
     funcion_lambda2 = lambda row: f"{row['fecha_atencion']} {row['hora_atencion']}"
@@ -67,20 +70,22 @@ def process_datetime_columns(df):
     # Convertir a datetime
     ConvertOperations.convert_column_type(df, ['fechahora_solicitud'], {'fechahora_solicitud': 'datetime'})
     ConvertOperations.convert_column_type(df, 'fechahora_atencion', 'datetime')
-    
+    print("pasa por aca")
     return df
 
 def calculate_wait_time(df):
-    """Calcula el tiempo de espera entre solicitud y atención y lo convierte a segundos"""
+    """Calcula el tiempo de espera entre solicitud y atención, lo convierte a segundos"""
     print("\nCalculando tiempo de espera...")
     
     # Crea la columna 'tiempo_espera' como un objeto Timedelta
-    funcion3 = lambda row: row["fechahora_atencion"] - row["fechahora_solicitud"]
-    df = BasicsTransformOperations.add_new_column(df, 'tiempo_espera', funcion3, 1)
+    tiempo_espera = lambda row: row["fechahora_atencion"] - row["fechahora_solicitud"] #Se restan qya que son del mismo tipo datetime
+    df = BasicsTransformOperations.add_new_column(df, 'tiempo_espera', tiempo_espera, 0)
 
     
     # Convierte el tiempo de espera a segundos totales (float)
     df['tiempo_espera_segundos'] = df['tiempo_espera'].dt.total_seconds()
+    
+    HeaderOperations.get_column_names(df)
     
     return df
 
@@ -92,7 +97,7 @@ def remove_unnecessary_columns(df):
         df, 
         'codigo_cita', 'id_usuario', 'id_medico', 'tiempo_espera_segundos',
         complement=False, 
-        show=3
+        show=5
     )
     
     return df_cleaned
@@ -103,8 +108,13 @@ def calculate_average_wait_time(df):
     
     promedio_tiempo_espera = df['tiempo_espera_segundos'].mean()
     print(f"El promedio del tiempo de espera es: {promedio_tiempo_espera} segundos")
+
+    resultado_df = pd.DataFrame({
+        'metrica': ['tiempo_promedio_espera_segundos'],
+        'valor': [promedio_tiempo_espera]
+    })
     
-    return promedio_tiempo_espera
+    return promedio_tiempo_espera, resultado_df
 
 def load_dimension_table(loader, df, names):
 
@@ -112,9 +122,6 @@ def load_dimension_table(loader, df, names):
     print("\nCargando dimensión: dim_citas_fechas3")
     loader.load_dimension(df, names)
     
-
-
-
 
 def load_facts_table(loader, df):
     """Carga los datos en la tabla de hechos"""
@@ -124,8 +131,6 @@ def load_facts_table(loader, df):
                             "id_producto": ("dim_producto", "producto_id"),
                             "id_cliente": ("dim_clientes", "cliente_id")
                         })
-
-
 
 def connection():
     """Función principal que orquesta todo el proceso ETL"""
@@ -139,29 +144,34 @@ def connection():
         citas_generales, urgencias = extract_data(db_extractor)
         
         # Filtrar citas de cirugía
-        citas_cirugia = filter_cirugia_citas(citas_generales) #esto solo es para saber si hay ciru
+        citas_cirugia = filter_cirugia_citas(citas_generales) #esto solo es para saber si hay cirugias
         
         # Procesar fechas y horas
         citas_procesadas = process_datetime_columns(citas_generales.copy())
+
         cotizante = db_extractor.get_table('cotizante')
         beneficiario = db_extractor.get_table('beneficiario')
+
+        beneficiario = HeaderOperations.rename_columns(beneficiario, {'id_beneficiario' : 'cedula'}, show =1)
+        HeaderOperations.get_column_names(beneficiario)
+
         cc_beneficiario = DataSelect.select_columns(beneficiario, 'cedula', 'nombre', 'sexo', show=1)
         cc_cotizante = DataSelect.select_columns(cotizante, 'cedula', 'nombre', 'sexo', show=1)
+          
         personas = TransformOperations.union_all([cc_cotizante, cc_beneficiario], show=1)
         
-        # Calcular tiempo de espera
+        # Calcular tiempo de espera en segundos 
         citas_con_tiempo = calculate_wait_time(citas_procesadas)
-        
+    
         # Limpiar columnas
         citas_limpias = remove_unnecessary_columns(citas_con_tiempo)
-        print("citas limpias")
-        print(citas_limpias)
+        
         
         # Calcular promedio
         promedio = calculate_average_wait_time(citas_limpias)
         
         # Cargar datos
-        load_dimension_table(loader_colombiasaludable, [citas_limpias, personas])
+        load_dimension_table(loader_colombiasaludable, [citas_limpias, personas],["dim_citas_limpias", "dim_personas"])
         
         # Opcional: Mostrar valores únicos (comentado)
         # print("\nValores únicos citas:")

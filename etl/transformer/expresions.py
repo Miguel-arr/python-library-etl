@@ -236,24 +236,6 @@ class DataExpresion:
         pandas.DataFrame
             DataFrame con la columna dividida en filas.
             
-        Ejemplo:
-        --------
-        >>> df = pd.DataFrame({'id': [1, 2], 'tags': ['a,b,c', 'x,y']})
-        >>> resultado = DataExpresion.split_column_into_rows(df, 'tags', ',', show=-1)
-        Dividiendo la columna 'tags' por el delimitador ','...
-        ╒════╤══════╤══════╕
-        │    │ id   │ tags │
-        ╞════╪══════╪══════╡
-        │  0 │ 1    │ a    │
-        ├────┼──────┼──────┤
-        │  1 │ 1    │ b    │
-        ├────┼──────┼──────┤
-        │  2 │ 1    │ c    │
-        ├────┼──────┼──────┤
-        │  3 │ 2    │ x    │
-        ├────┼──────┼──────┤
-        │  4 │ 2    │ y    │
-        ╘════╧══════╧══════╛
         """
         try:
             # Validaciones de tipos de parámetros

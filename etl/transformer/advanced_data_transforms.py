@@ -38,17 +38,6 @@ class TransformOperations:
         ValueError
             Si n no es un entero positivo.
 
-        Ejemplo:
-        --------
-        >>> df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-        >>> print(TransformOperations.head(df, 2))
-        ╒═════╤═════╕
-        │   A │   B │
-        ╞═════╪═════╡
-        │   1 │   4 │
-        ├─────┼─────┤
-        │   2 │   5 │
-        ╘═════╧═════╛
         """
         try:
             # Validación de tipos de entrada
@@ -61,7 +50,8 @@ class TransformOperations:
             df_head = df.head(n)
             
             # Formatear y retornar la tabla
-            return tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
+            result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
+            return result
         
         except Exception as e:
             print(f"Error al obtener las primeras {n} filas: {e}")
@@ -100,20 +90,7 @@ class TransformOperations:
         Lanza:
         ------
         TypeError
-            Si los parámetros no tienen los tipos adecuados.
-
-        Ejemplo:
-        --------
-        >>> df1 = pd.DataFrame({'key': ['A', 'B', 'C'], 'value1': [1, 2, 3]})
-        >>> df2 = pd.DataFrame({'key': ['A', 'B'], 'value2': [10, 20]})
-        >>> result = TransformOperations.left_join(df1, df2, on='key', show=2)
-        ╒═══════╤══════════╤══════════╕
-        │ key   │   value1 │   value2 │
-        ╞═══════╪══════════╪══════════╡
-        │ A     │        1 │       10 │
-        ├───────┼──────────┼──────────┤
-        │ B     │        2 │       20 │
-        ╘═══════╧══════════╧══════════╛
+            Si los parámetros no tienen los tipos adecuados.══════╛
         """
         try:
             # Validaciones de tipos
@@ -175,11 +152,6 @@ class TransformOperations:
         TypeError
             Si los tipos de parámetros no son correctos.
 
-        Ejemplo:
-        --------
-        >>> df1 = pd.DataFrame({'key': ['A', 'B'], 'value1': [1, 2]})
-        >>> df2 = pd.DataFrame({'key': ['A', 'B', 'C'], 'value2': [10, 20, 30]})
-        >>> result = TransformOperations.right_join(df1, df2, on='key', show=1)
         """
         try:
             # Validaciones de tipos
@@ -228,11 +200,6 @@ class TransformOperations:
         pd.DataFrame
             DataFrame con las filas que coinciden en ambos DataFrames.
 
-        Ejemplo:
-        --------
-        >>> df1 = pd.DataFrame({'key': ['A', 'B', 'C'], 'value1': [1, 2, 3]})
-        >>> df2 = pd.DataFrame({'key': ['A', 'B', 'D'], 'value2': [10, 20, 40]})
-        >>> result = TransformOperations.inner_join(df1, df2, on='key', show=-1)
         """
         try:
             # Validaciones de tipos
@@ -282,11 +249,6 @@ class TransformOperations:
         pd.DataFrame
             DataFrame con la unión completa de ambos DataFrames.
 
-        Ejemplo:
-        --------
-        >>> df1 = pd.DataFrame({'key': ['A', 'B'], 'value1': [1, 2]})
-        >>> df2 = pd.DataFrame({'key': ['B', 'C'], 'value2': [20, 30]})
-        >>> result = TransformOperations.outer_join(df1, df2, on='key', show=0)
         """
         try:
             # Validaciones de tipos
@@ -314,69 +276,7 @@ class TransformOperations:
             print(f"Error al realizar el outer join: {e}")
             raise
 
-    @staticmethod
-    def group_by_sum(df, by, column, show=0):
-        """
-        Agrupa el DataFrame por una o varias columnas y suma los valores de una columna específica.
-        
-        Esta operación es útil para obtener totales por categorías o grupos.
-
-        Parámetros:
-        -----------
-        df : pd.DataFrame
-            DataFrame de entrada para agrupar.
-        by : str o list
-            Columna(s) por las cuales agrupar los datos.
-        column : str
-            Columna cuyos valores numéricos se sumarán.
-        show : int
-            Control de visualización de resultados.
-
-        Retorna:
-        --------
-        pd.DataFrame
-            DataFrame agrupado con la suma por grupo.
-
-        Ejemplo:
-        --------
-        >>> df = pd.DataFrame({
-        ...     'categoria': ['A', 'A', 'B', 'B', 'A'],
-        ...     'ventas': [100, 200, 150, 50, 300]
-        ... })
-        >>> result = TransformOperations.group_by_sum(df, 'categoria', 'ventas', show=-1)
-        ╒═════════════╤══════════╕
-        │ categoria   │   ventas │
-        ╞═════════════╪══════════╡
-        │ A           │      600 │
-        ├─────────────┼──────────┤
-        │ B           │      200 │
-        ╘═════════════╧══════════╛
-        """
-        try:
-            # Validaciones de tipos
-            if not isinstance(df, pd.DataFrame):
-                raise TypeError("df debe ser un DataFrame de pandas")
-            if not isinstance(by, (str, list)):
-                raise TypeError("'by' debe ser una cadena o lista")
-            if not isinstance(column, str):
-                raise TypeError("'column' debe ser una cadena")
-            if not isinstance(show, int):
-                raise TypeError("'show' debe ser un número entero")
-
-            # Agrupar y sumar
-            grouped_df = df.groupby(by)[column].sum().reset_index()
-
-            # Mostrar resultado si se solicita
-            if show > 0:
-                print(TransformOperations.head(grouped_df, show))
-            elif show == -1:
-                print(TransformOperations.head(grouped_df, len(grouped_df)))
-
-            return grouped_df
-        
-        except Exception as e:
-            print(f"Error al agrupar y sumar: {e}")
-            raise
+    
 
     @staticmethod
     def apply_to_column(df, column, func, show=0):
@@ -398,21 +298,8 @@ class TransformOperations:
             Control de visualización del resultado.
 
         Retorna:
-        --------
-        pd.DataFrame
             DataFrame modificado con la función aplicada.
 
-        Ejemplo:
-        --------
-        >>> df = pd.DataFrame({'texto': ['HOLA', 'mundo', 'PYTHON']})
-        >>> result = TransformOperations.apply_to_column(df, 'texto', str.lower, show=2)
-        ╒══════════╕
-        │ texto    │
-        ╞══════════╡
-        │ hola     │
-        ├──────────┤
-        │ mundo    │
-        ╘══════════╛
         """
         try:
             # Validaciones de tipos
@@ -469,20 +356,6 @@ class TransformOperations:
         pd.DataFrame
             DataFrame ordenado según las columnas indicadas.
 
-        Ejemplo:
-        --------
-        >>> df = pd.DataFrame({
-        ...     'nombre': ['Carlos', 'Ana', 'Juan'],
-        ...     'edad': [25, 30, 20]
-        ... })
-        >>> result = TransformOperations.sort_by(df, 'edad', ascending=False, show=2)
-        ╒═════════╤════════╕
-        │ nombre  │   edad │
-        ╞═════════╪════════╡
-        │ Ana     │     30 │
-        ├─────────┼────────┤
-        │ Carlos  │     25 │
-        ╘═════════╧════════╛
         """
         try:
             # Validaciones de tipos
@@ -535,22 +408,7 @@ class TransformOperations:
         pd.DataFrame
             DataFrame sin filas duplicadas según el subset indicado.
 
-        Ejemplo:
-        --------
-        >>> df = pd.DataFrame({
-        ...     'id': [1, 2, 2, 3],
-        ...     'nombre': ['A', 'B', 'B', 'C']
-        ... })
-        >>> result = TransformOperations.drop_duplicates(df, subset='id', show=-1)
-        ╒═══════╤══════════╕
-        │   id │ nombre   │
-        ╞═══════╪══════════╡
-        │     1 │ A        │
-        ├───────┼──────────┤
-        │     2 │ B        │
-        ├───────┼──────────┤
-        │     3 │ C        │
-        ╘═══════╧══════════╛
+
         """
         try:
             # Validaciones de tipos
@@ -598,21 +456,8 @@ class TransformOperations:
             Control de impresión.
 
         Retorna:
-        --------
-        pd.DataFrame
             DataFrame con los valores reemplazados en la columna indicada.
 
-        Ejemplo:
-        --------
-        >>> df = pd.DataFrame({'status': ['A', 'B', 'A', 'C']})
-        >>> result = TransformOperations.replace_values(df, 'status', 'A', 'Active', show=2)
-        ╒══════════╕
-        │ status   │
-        ╞══════════╡
-        │ Active   │
-        ├──────────┤
-        │ B        │
-        ╘══════════╛
         """
         try:
             # Validaciones de tipos
@@ -654,24 +499,9 @@ class TransformOperations:
             Control de impresión.
 
         Retorna:
-        --------
-        pd.DataFrame
             DataFrame resultante de concatenar todos los DataFrames.
 
-        Ejemplo:
-        --------
-        >>> df1 = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
-        >>> df2 = pd.DataFrame({'A': [5, 6], 'B': [7, 8]})
-        >>> result = TransformOperations.union_all([df1, df2], show=3)
-        ╒═════╤═════╕
-        │   A │   B │
-        ╞═════╪═════╡
-        │   1 │   3 │
-        ├─────┼─────┤
-        │   2 │   4 │
-        ├─────┼─────┤
-        │   5 │   7 │
-        ╘═════╧═════╛
+
         """
         try:
             # Validaciones de tipos
@@ -696,6 +526,57 @@ class TransformOperations:
             raise
 
     @staticmethod
+    def group_by_sum(df, by, column, show=0):
+        """
+        Agrupa el DataFrame por una o varias columnas y suma los valores de una columna específica.
+        
+        Esta operación es útil para obtener totales por categorías o grupos.
+
+        Parámetros:
+        -----------
+        df : pd.DataFrame
+            DataFrame de entrada para agrupar.
+        by : str o list
+            Columna(s) por las cuales agrupar los datos.
+        column : str
+            Columna cuyos valores numéricos se sumarán.
+        show : int
+            Control de visualización de resultados.
+
+        Retorna:
+        --------
+        pd.DataFrame
+            DataFrame agrupado con la suma por grupo.
+
+
+        """
+        try:
+            # Validaciones de tipos
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError("df debe ser un DataFrame de pandas")
+            if not isinstance(by, (str, list)):
+                raise TypeError("'by' debe ser una cadena o lista")
+            if not isinstance(column, str):
+                raise TypeError("'column' debe ser una cadena")
+            if not isinstance(show, int):
+                raise TypeError("'show' debe ser un número entero")
+
+            # Agrupar y sumar
+            grouped_df = df.groupby(by)[column].sum().reset_index()
+
+            # Mostrar resultado si se solicita
+            if show > 0:
+                print(TransformOperations.head(grouped_df, show))
+            elif show == -1:
+                print(TransformOperations.head(grouped_df, len(grouped_df)))
+
+            return grouped_df
+        
+        except Exception as e:
+            print(f"Error al agrupar y sumar: {e}")
+            raise
+
+    @staticmethod
     def group_by_count(df, by, show=0):
         """
         Agrupa el DataFrame por una o más columnas y cuenta filas por grupo.
@@ -713,25 +594,9 @@ class TransformOperations:
             Control de impresión.
 
         Retorna:
-        --------
-        pd.DataFrame
             DataFrame con las columnas de agrupación y una columna 'conteo'
             con el número de filas por grupo.
 
-        Ejemplo:
-        --------
-        >>> df = pd.DataFrame({
-        ...     'departamento': ['IT', 'IT', 'HR', 'HR', 'IT'],
-        ...     'empleado': ['A', 'B', 'C', 'D', 'E']
-        ... })
-        >>> result = TransformOperations.group_by_count(df, 'departamento', show=-1)
-        ╒═════════════════╤══════════╕
-        │ departamento   │   conteo │
-        ╞═════════════════╪══════════╡
-        │ HR             │        2 │
-        ├─────────────────┼──────────┤
-        │ IT             │        3 │
-        ╘═════════════════╧══════════╛
         """
         try:
             # Validaciones de tipos
@@ -777,24 +642,9 @@ class TransformOperations:
             Control de visualización de resultados.
 
         Retorna:
-        --------
-        pd.DataFrame
             DataFrame agrupado con el promedio por grupo.
 
-        Ejemplo:
-        --------
-        >>> df = pd.DataFrame({
-        ...     'grupo': ['A', 'A', 'B', 'B', 'A'],
-        ...     'puntuacion': [85, 90, 75, 80, 95]
-        ... })
-        >>> result = TransformOperations.group_by_mean(df, 'grupo', 'puntuacion', show=-1)
-        ╒══════════╤═════════════════╕
-        │ grupo    │   puntuacion    │
-        ╞══════════╪═════════════════╡
-        │ A        │            90.0 │
-        ├──────────┼─────────────────┤
-        │ B        │            77.5 │
-        ╘══════════╧═════════════════╛
+       
         """
         try:
             # Validaciones de tipos
@@ -821,6 +671,42 @@ class TransformOperations:
         except Exception as e:
             print(f"Error al agrupar y promediar: {e}")
             raise
+    @staticmethod
+    def group_by_shift(df, by, column, new_column_name, periods=1, show=0):
+
+        try:
+          # Validaciones
+           if not isinstance(df, pd.DataFrame):
+               raise TypeError("df debe ser un DataFrame de pandas")
+           if not isinstance(by, (str, list)):
+               raise TypeError("'by' debe ser una cadena o lista")
+           if not isinstance(column, str):
+               raise TypeError("'column' debe ser una cadena")
+           if not isinstance(new_column_name, str):
+               raise TypeError("'new_column_name' debe ser una cadena")
+           if not isinstance(periods, int):
+               raise TypeError("'periods' debe ser un entero")
+           if not isinstance(show, int):
+               raise TypeError("'show' debe ser un número entero")
+
+           # Aplicar shift dentro del grupo
+           df[new_column_name] = df.groupby(by)[column].shift(periods)
+
+        # Mostrar si se solicita
+           if show > 0:
+               print(TransformOperations.head(df, show))
+           elif show == -1:
+               print(TransformOperations.head(df, len(df)))
+
+           return df
+
+        except Exception as e:
+           print(f"Error al aplicar group_by_shift: {e}")
+           raise
+
+
+
+             
 
     @staticmethod
     def filter_by_list_length(df, columna, longitud=None, keep_in=True, show=0):
@@ -846,20 +732,6 @@ class TransformOperations:
             >0 = mostrar n filas
             -1 = mostrar todas
 
-        Retorna:
-        --------
-        pd.DataFrame
-            DataFrame filtrado.
-
-        Ejemplo:
-        --------
-        >>> df = pd.DataFrame({
-        ...     "id": [1,2,3,4],
-        ...     "valores": [[10], [20,30], [40,50,60], []]
-        ... })
-        >>> TransformOperations.filtrar_por_longitud_lista(df, "valores", longitud=2, show=-1)
-        id   valores
-        1   2  [20, 30]
         """
         try:
             if not isinstance(df, pd.DataFrame):
@@ -890,9 +762,9 @@ class TransformOperations:
 
             # Mostrar resultado si se solicita
             if show > 0:
-                print(df_filtrado.head(show))
+                print(TransformOperations.head(df, show))
             elif show == -1:
-                print(df_filtrado)
+                print(TransformOperations.head(df, len(df)))
 
             return df_filtrado
         

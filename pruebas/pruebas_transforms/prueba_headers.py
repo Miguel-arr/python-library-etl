@@ -1,8 +1,5 @@
 from etl import DB_Extractor, HeaderOperations, BasicsTransformOperations
 
-from etl.extractors.db_extractor import DB_Extractor
-from etl.transformer.header import HeaderOperations
-from etl.transformer.basics_data_transformer import BasicsTransformOperations
 
 
 # Ejemplo

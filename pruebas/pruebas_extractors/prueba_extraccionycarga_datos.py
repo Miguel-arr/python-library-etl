@@ -8,21 +8,15 @@ import pandas as pd
 
 
 def test_petl_search():
-    db_params_postgres = {
+
+    db_params_postgres = {#datos para extraer de postgres 
         "db_type": "postgresql",
         "user" : "postgres",
         "password": "admin",           
         "database": "colombia_saludable"      
     }
 
-    db_params_postgres_loader = {
-        "db_type": "postgresql",
-        "user" : "postgres",
-        "password": "admin",           
-        "database": "carga_colombia"      
-    }
-
-    db_params_oracle = {
+    db_params_oracle = {#datos para extraer de oracle   
         "db_type": "oracle",
         "user" : "USER_MIGUEL",
         "password": "Miguel99",           
@@ -30,21 +24,26 @@ def test_petl_search():
         "service_name": "xe"     
     }
 
-    db_params_mysql = {
+    db_params_mysql = {#Ddatos para extraer de mysql
         "db_type": "mysql",
         "password": "admin",           
         "database": "ventas",   
     }
     
+
+
+    db_params_postgres_loader = {#baswe de datos para cargar dimensiones y hechos en postgres
+        "db_type": "postgresql",
+        "user" : "postgres",
+        "password": "admin",           
+        "database": "carga_colombia"      
+    }
     
     db_extract_postgres = DB_Extractor(**db_params_postgres)
     db_extract_oracle = DB_Extractor(**db_params_oracle)
     db_extract_mysql = DB_Extractor(**db_params_mysql)
     db_params_postgres_loader = DB_Extractor(**db_params_postgres_loader)
     
-
-
-
     try:
         # Conectar a la base de datos
         db_extract_postgres.connect()
@@ -62,8 +61,9 @@ def test_petl_search():
         cotizante = db_extract_postgres.get_table('cotizante')
         beneficiario = db_extract_postgres.get_table('beneficiario')
         print("hola")
+
+
         beneficiario = HeaderOperations.rename_columns(beneficiario, {'id_beneficiario' : 'cedula'}, show =1)
-        
         cc_beneficiario = DataSelect.select_columns(beneficiario, 'cedula', 'nombre', 'sexo', show=1)
         cc_cotizante = DataSelect.select_columns(cotizante, 'cedula', 'nombre', 'sexo', show=1)
         personas = TransformOperations.union_all([cc_cotizante, cc_beneficiario], show=1)
@@ -132,7 +132,7 @@ def test_petl_search():
                             "id_usuario": ("dim_personas", "cedula"),
                             "id_medico": ("dim_medico", "cedula"),
                             }
-        loader_postgres.load_fact(formulas_type, 'fact2', foreign_keys)
+        loader_postgres.load_fact(formulas_type, 'fact', foreign_keys)
                                                    
 
     except Exception as e:

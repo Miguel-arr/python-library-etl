@@ -78,6 +78,8 @@ class BasicsTransformOperations:
             df_head = df.head(n)
             result = tabulate(df_head, headers="keys", tablefmt="fancy_grid", showindex=False)
             return result
+            
+            
         except Exception as e:
             print(f"Error al obtener las primeras {n} filas: {e}")
             raise
@@ -249,12 +251,12 @@ class BasicsTransformOperations:
         """
         try:
             # Paso 1: Convertir a lista
-            df_con_lista = BasicsTransformOperations.convertir_columna_a_lista(
+            df_con_lista = BasicsTransformOperations.convert_column_to_list(
                 df, columna, delimitador, show=show
             )
             
             # Paso 2: Hacer explode
-            df_normalizado = BasicsTransformOperations.explotar_columna_lista(
+            df_normalizado = BasicsTransformOperations.explode_column_list(
                 df_con_lista, 
                 f'{columna}_lista', 
                 mantener_original=mantener_original,
@@ -300,35 +302,44 @@ class BasicsTransformOperations:
     @staticmethod
     @validate_params(df_type=True, columns_type=True, n_type=True)
     def convert_column_to_list(df, columna, delimitador=';', nueva_columna=None, show=0):
+        """
+        Convierte una columna de strings delimitados en una columna de listas.
+
+        :param df: DataFrame de entrada.
+        :param columna: Nombre de la columna a transformar.
+        :param delimitador: Carácter delimitador usado en el string (por defecto ';').
+        :param nueva_columna: Nombre de la nueva columna. Si es None, la columna original se sobrescribe.
+        :param show: Número de filas a mostrar (0 para no mostrar, -1 para todas).
+        :return: DataFrame con la columna transformada.
+        """
         try:
             if columna not in df.columns:
                 raise ValueError(f"La columna '{columna}' no existe en el DataFrame")
-            
-            # Crear nombre para la nueva columna
-            if nueva_columna is None:
-                nueva_columna = f"{columna}_lista"
-            
-            # Convertir a string por si hay enteros y luego split
+
+            # Determinar el nombre de la columna de destino
+            columna_destino = nueva_columna if nueva_columna is not None else columna
+
+            # Crear una copia del DataFrame para evitar SettingWithCopyWarning
             df_copy = df.copy()
-            df_copy[nueva_columna] = df_copy[columna].astype(str).str.split(delimitador)
-            
+
+            # Convertir a string (para manejar posibles nulos o tipos numéricos) y luego aplicar split
+            # Se usa .str.split(delimitador) para convertir el string delimitado en una lista
+            df_copy[columna_destino] = df_copy[columna].astype(str).str.split(delimitador)
+
             # Mostrar resultados si está habilitado
             if show > 0:
-                print(f"=== DESPUÉS DE CONVERTIR '{columna}' A LISTA ===")
-                print(f"Columnas: {list(df_copy.columns)}")
                 print(BasicsTransformOperations.show_head(df_copy, show))
                 print("\n")
             elif show == -1:
-                print(f"=== DESPUÉS DE CONVERTIR '{columna}' A LISTA ===")
-                print(f"Columnas: {list(df_copy.columns)}")
                 print(BasicsTransformOperations.show_head(df_copy, len(df_copy)))
                 print("\n")
-            
+
             return df_copy
-            
+
         except Exception as e:
-            print(f"Error al convertir columna a lista: {e}")
-            raise
+            print(f"Error en convert_column_to_list: {e}")
+            return df
+
 
     @staticmethod
     @validate_params(df_type=True, columns_type=True, n_type=True)
@@ -365,15 +376,9 @@ class BasicsTransformOperations:
             
             # Mostrar resultados si está habilitado
             if show > 0:
-                print(f"=== DESPUÉS DE EXPLODE DE '{columna_lista}' ===")
-                print(f"Filas originales: {len(df)}, Filas finales: {len(df_explode)}")
-                print(f"Columnas: {list(df_explode.columns)}")
                 print(BasicsTransformOperations.show_head(df_explode, show))
                 print("\n")
             elif show == -1:
-                print(f"=== DESPUÉS DE EXPLODE DE '{columna_lista}' ===")
-                print(f"Filas originales: {len(df)}, Filas finales: {len(df_explode)}")
-                print(f"Columnas: {list(df_explode.columns)}")
                 print(BasicsTransformOperations.show_head(df_explode, len(df_explode)))
                 print("\n")
             
