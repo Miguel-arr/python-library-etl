@@ -1,57 +1,58 @@
 # Importación de librerías necesarias
-import os                  # Permite interactuar con el sistema operativo (por ejemplo, verificar si existe un archivo)
-import pandas as pd        # Librería para manejo y análisis de datos (DataFrames)
-import petl as etl         # Librería para transformaciones y exportaciones de datos (ligera y eficiente)
-from tabulate import tabulate  # Sirve para mostrar datos en formato de tabla en consola
+import os
+import pandas as pd
+import petl as etl
+from tabulate import tabulate
 
 
 class XLSXExtractor:
     """
-    Clase para manejar operaciones de lectura, previsualización y escritura de archivos Excel (.xlsx).
-    Integra pandas y petl para combinar facilidad de lectura, procesamiento y exportación eficiente.
+    Clase especializada en la extracción, visualización y escritura
+    de archivos Excel (.xlsx).
+    Permite leer hojas individuales o múltiples, previsualizar datos
+    y exportar información.
     """
 
     def __init__(self, file_path):
         """
-        Inicializa el objeto con la ruta del archivo Excel.
-        Verifica que el archivo exista antes de proceder.
+        Inicializa el extractor validando que el archivo exista.
 
-        Parámetros:
-        - file_path (str): Ruta completa del archivo Excel a procesar.
+        :param file_path: Ruta del archivo Excel.
+        :raises FileNotFoundError: Si el archivo no existe.
         """
-        if not os.path.exists(file_path):  # Verifica si el archivo existe
-            raise FileNotFoundError(f"El archivo {file_path} no existe.")  # Lanza error si no existe
-        self.file_path = file_path  # Guarda la ruta del archivo como atributo del objeto
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"El archivo {file_path} no existe.")
+        self.file_path = file_path
+
 
     def read_sheet(self, sheet_name=None, **kwargs):
         """
-        Lee una hoja específica del archivo Excel o todas las hojas si no se especifica una.
+        Lee una hoja específica o todas las hojas del archivo Excel.
 
-        Parámetros:
-        - sheet_name (str, opcional): Nombre de la hoja a leer. Si es None, lee todas.
-        - **kwargs: Argumentos adicionales que se pasan a pd.read_excel (ej. header, skiprows, etc.)
-
-        Retorna:
-        - DataFrame o diccionario de DataFrames (si se leen todas las hojas).
+        :param sheet_name: Nombre de la hoja a leer. Si es None, lee todas.
+        :param kwargs: Argumentos adicionales compatibles con pandas.read_excel().
+        :return: DataFrame (una hoja) o dict de DataFrames (todas las hojas).
         """
         try:
             if sheet_name:
-                # Lee una hoja específica del Excel
                 data = pd.read_excel(self.file_path, sheet_name=sheet_name, **kwargs)
                 print(f"Hoja '{sheet_name}' leída exitosamente.")
                 return data
             else:
-                # Lee todas las hojas del archivo (retorna un diccionario con nombre_hoja: DataFrame)
                 all_sheets = pd.read_excel(self.file_path, sheet_name=None, **kwargs)
                 print("Archivo leído exitosamente con todas las hojas.")
                 return all_sheets
         except Exception as e:
-            # Captura y muestra cualquier error al leer el archivo
             print(f"Error al leer el archivo Excel: {e}")
             raise
 
 
     def get_sheet_names(self):
+        """
+        Obtiene los nombres de todas las hojas del archivo Excel.
+
+        :return: Lista con los nombres de las hojas.
+        """
         try:
             xls = pd.ExcelFile(self.file_path)
             return xls.sheet_names
@@ -61,56 +62,71 @@ class XLSXExtractor:
 
 
     def preview_data(self, sheet_name=None, n=5, **kwargs):
+        """
+        Muestra una vista previa formateada de una hoja o de todas las hojas.
+
+        :param sheet_name: Nombre de la hoja a visualizar. Si es None, muestra todas.
+        :param n: Número de filas a mostrar por hoja.
+        :param kwargs: Argumentos adicionales para read_sheet().
+        """
         try:
-            # Lee la(s) hoja(s) solicitada(s)
             data = self.read_sheet(sheet_name, **kwargs)
 
             if sheet_name:
-                # Si se pasa una hoja específica, la muestra formateada como tabla
-                print(f"Hoja: {sheet_name}")
-                print(tabulate(data.head(n), headers='keys', tablefmt='grid', showindex=False))
+                print(f"\n Hoja: {sheet_name}")
+                print(
+                    tabulate(
+                        data.head(n),
+                        headers="keys",
+                        tablefmt="fancy_grid",
+                        showindex=False
+                    )
+                )
             else:
-                # Si no se especifica, recorre todas las hojas del archivo
                 for name, df in data.items():
-                    print(f"Hoja: {name}")
-                    print(tabulate(df.head(n), headers='keys', tablefmt='grid', showindex=False))
-                    print("-" * 40)  # Separador visual entre hojas
+                    print(f"\n Hoja: {name}")
+                    print(
+                        tabulate(
+                            df.head(n),
+                            headers="keys",
+                            tablefmt="fancy_grid",
+                            showindex=False
+                        )
+                    )
+                    print("-" * 50)
+
         except Exception as e:
             print(f"Error al previsualizar los datos: {e}")
             raise
 
-    def toxlsx(self, df, filename=None, sheet_name="Sheet1", write_header=True, mode="replace"):
-        """
-        Exporta un DataFrame a un archivo Excel, creando o reemplazando hojas según configuración.
 
-        Parámetros:
-        - df (DataFrame): Datos que se desean exportar al archivo Excel.
-        - filename (str, opcional): Nombre o ruta del archivo de destino. 
-          Si no se especifica, se sobrescribe el archivo original.
-        - sheet_name (str): Nombre de la hoja donde se guardarán los datos.
-        - write_header (bool): Indica si se escriben los nombres de las columnas.
-        - mode (str): Modo de escritura ('replace', 'append', etc.)
+    def toxlsx(self, df, filename=None, sheet_name="Sheet1",
+               write_header=True, mode="replace"):
         """
-        # Si no se especifica un nuevo archivo, usa el original
+        Exporta un DataFrame a un archivo Excel.
+
+        :param df: DataFrame a guardar.
+        :param filename: Ruta destino del archivo. Si es None, sobrescribe el original.
+        :param sheet_name: Nombre de la hoja donde se guardarán los datos.
+        :param write_header: Indica si se escribe la cabecera.
+        :param mode: Modo de escritura (replace o append según petl).
+        :raises Exception: Si ocurre un error durante la exportación.
+        """
         if filename is None:
             filename = self.file_path
 
-        # Validación para eliminar columnas "Unnamed" que a veces crea Excel
         if isinstance(df, pd.DataFrame):
             if df.columns.str.contains("Unnamed").any():
-                df.columns = df.iloc[0]          # Reasigna la primera fila como nombres de columnas
-                df = df[1:]                      # Elimina la primera fila del cuerpo de datos
-                df = df.reset_index(drop=True)   # Reinicia el índice del DataFrame
+                df.columns = df.iloc[0]
+                df = df[1:]
+                df = df.reset_index(drop=True)
 
-        # Convierte el DataFrame a formato petl (tabla)
         table = etl.fromdataframe(df)
 
         try:
-            # Exporta los datos a Excel usando petl
-            etl.toxlsx(table, filename, sheet=sheet_name, write_header=write_header, mode=mode)
+            etl.toxlsx(table, filename, sheet=sheet_name,
+                       write_header=write_header, mode=mode)
             print(f"Datos guardados en el archivo '{filename}', hoja '{sheet_name}'.")
         except Exception as e:
-            # Captura y muestra errores al exportar
             print(f"Error al guardar los datos en el archivo Excel: {e}")
             raise
-

@@ -420,9 +420,9 @@ class ConvertOperations:
             
             # Mostrar resultados si show está habilitado
             if show > 0:
-                print(ConvertOperations.head(df, show))
+                ConvertOperations.head(df, show)
             elif show == -1:
-                print(ConvertOperations.head(df, len(df)))
+                ConvertOperations.head(df, len(df))
             
             return df
             

@@ -1,5 +1,7 @@
 import pandas as pd
 import sqlalchemy as sqlch
+from tabulate import tabulate
+
 
 class DB_Loader:
     """
@@ -273,3 +275,42 @@ class DB_Loader:
             print("✅ Conexión a base de datos verificada.")
         except Exception as e:
             print(f"❌ Error al verificar conexión: {e}")
+
+
+    def verify_table_load(self, table_name, engine=None, show_sample=5):
+        eng = self._get_engine(engine)
+
+        with eng.connect() as conn:
+            # Verificar existencia (PostgreSQL)
+            exists_query = f"""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = '{table_name}'
+            );
+            """
+            exists = pd.read_sql(exists_query, conn).iloc[0, 0]
+
+            if not exists:
+                print(f"❌ La tabla '{table_name}' no existe.")
+                return
+
+            # Total registros
+            total = pd.read_sql(
+                f"SELECT COUNT(*) AS total FROM {table_name}", conn
+            )["total"][0]
+
+            # Muestra
+            sample_df = pd.read_sql(
+                f"SELECT * FROM {table_name} LIMIT {show_sample}", conn
+            )
+
+        resumen = pd.DataFrame({
+            "Tabla": [table_name],
+            "Total Registros": [total]
+        })
+
+        print("\n📊 VERIFICACIÓN ETL")
+        print(tabulate(resumen, headers="keys", tablefmt="fancy_grid", showindex=False))
+        print("\n🔎 Muestra:")
+        print(tabulate(sample_df, headers="keys", tablefmt="fancy_grid", showindex=False))
+        print()

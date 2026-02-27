@@ -111,7 +111,15 @@ class DataSelect:
             if field not in df.columns:
                 raise ValueError(f"El campo '{field}' no existe en el DataFrame")
 
-            mask = df[field] == value
+            # --- CAMBIO CLAVE AQUÍ ---
+            if isinstance(value, list):
+                # Si es lista, usamos .isin()
+                mask = df[field].isin(value)
+            else:
+                # Si es un valor único, usamos ==
+                mask = df[field] == value
+            # --------------------------
+
             result = df[~mask] if complement else df[mask]
 
             if show != 0:

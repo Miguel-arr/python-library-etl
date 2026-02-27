@@ -1,6 +1,4 @@
-from etl.extractors.db_extractor import DB_Extractor
-from etl.transformer.advanced_data_transforms import TransformOperations
-from etl.transformer.basics_data_transformer import BasicsTransformOperations
+from etl import DB_Extractor, BasicsTransformOperations, TransformOperations
 import pandas as pd
 
 def test_mysql_connection():
@@ -11,26 +9,26 @@ def test_mysql_connection():
         "database": "ventas"   
     }
 
-    db_connected = DB_Extractor(**db_params)
+    db_loader = DB_Extractor(**db_params)
     tf = TransformOperations
     btf = BasicsTransformOperations
     
-    try: 
+    try:
         # Conectar a la base de datos
-        db_connected.connect()
+        db_loader.connect()
 
         # Extraer los datos de las tablas
         print("Extrayendo datos de la tabla cliente...")
         query_clientes = "SELECT * FROM cliente"
-        clientes = db_connected.execute_query(query_clientes)
+        clientes = db_loader.execute_query(query_clientes)
 
         print("Extrayendo datos de la tabla comercial...")
         query_comerciales = "SELECT * FROM comercial"
-        comerciales = db_connected.execute_query(query_comerciales)
+        comerciales = db_loader.execute_query(query_comerciales)
 
         print("Extrayendo datos de la tabla pedido...")
         query_pedidos = "SELECT * FROM pedido"
-        pedidos = db_connected.execute_query(query_pedidos)
+        pedidos = db_loader.execute_query(query_pedidos)
 
 
         # Aplicar todas las transformaciones
@@ -112,12 +110,12 @@ def test_mysql_connection():
 
         # Cargar el último DataFrame procesado a la base de datos
         print("\nCargando los datos transformados a la base de datos...")
-        #db_connected.load_data(data, "pedido_transformado", if_exists="replace")  # Puedes cambiar el nombre de la tabla
+        #db_loader.load_data(data, "pedido_transformado", if_exists="replace")  # Puedes cambiar el nombre de la tabla
 
     except Exception as e:
         print(f"Error durante la ejecución: {e}")
     finally:
-        db_connected.close_connection()
+        db_loader.close_connection()
 
 if __name__ == "__main__":
     test_mysql_connection()

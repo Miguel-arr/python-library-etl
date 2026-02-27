@@ -70,7 +70,6 @@ def test_mysql_connection():
         data = tf.sort_by(data, "id", ascending=False)
         print(btf.show_head(data, 5))    
 
-            
 
         print("\n REMPLAZAR valores en la columna 'monto_total' donde sea negativo...")
         data = tf.replace_values(data, "total", [5760, 2480.4, 2400.6], 1)  # Reemplazar valores negativos por 0

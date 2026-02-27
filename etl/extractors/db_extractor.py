@@ -150,9 +150,7 @@ class DB_Extractor:
         Exception
             - Si la consulta SQL es inválida
             - Si hay errores de permisos
-            - Si la consulta timeout
-            
-    
+            - Si la consulta timeout             
         """
         try:
             if self.engine is None:

@@ -389,3 +389,66 @@ class BasicsTransformOperations:
             raise
 
 
+    @staticmethod
+    @validate_params(df_type=True, columns_type=True)
+    def get_column_metrics(df, column):
+        """
+        Calcula métricas básicas (promedio, suma, conteo) de una columna numérica.
+        
+        Args:
+            df: DataFrame de pandas
+            column: Nombre de la columna numérica
+            
+        Returns:
+            Tuple: (promedio, total, cantidad)
+        """
+        try:
+            if column not in df.columns:
+                raise ValueError(f"La columna '{column}' no existe en el DataFrame")
+            
+            # Aseguramos que los datos sean numéricos para evitar errores en el cálculo
+            values = pd.to_numeric(df[column], errors='coerce')
+            
+            promedio = values.mean()
+            total = values.sum()
+            cantidad = len(df)
+            
+            return promedio, total, cantidad
+        except Exception as e:
+            print(f"Error al calcular métricas en la columna '{column}': {e}")
+            raise
+
+    @staticmethod
+    def create_fact_dataframe(tipo_analisis, promedio, total, cantidad):
+        """
+        Crea un DataFrame de hechos formateado para reportes de análisis.
+        
+        Args:
+            tipo_analisis: String descriptivo del análisis (ej: 'general', 'crónicos')
+            promedio: Valor del promedio calculado
+            total: Valor de la suma total
+            cantidad: Conteo de registros/servicios
+            
+        Returns:
+            pd.DataFrame de una sola fila con los resultados
+        """
+        try:
+            df_fact = pd.DataFrame([{
+                'tipo_analisis': tipo_analisis,
+                'promedio_costo': promedio,
+                'total_servicios': cantidad,
+                'costo_total': total
+            }])
+            return df_fact
+        except Exception as e:
+            print(f"Error al crear el DataFrame de hechos: {e}")
+            raise
+
+    @staticmethod
+    @validate_params(df_type=True, columns_type=True)
+    def quick_summary_report(df, column, analysis_label="general"):
+        """
+        Método 'todo en uno' que calcula métricas y devuelve el DataFrame de hechos.
+        """
+        prom, tot, cant = BasicsTransformOperations.get_column_metrics(df, column)
+        return BasicsTransformOperations.create_fact_dataframe(analysis_label, prom, tot, cant)

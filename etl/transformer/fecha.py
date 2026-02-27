@@ -1,4 +1,6 @@
 import pandas as pd
+import os
+from pathlib import Path
 import holidays
 from tabulate import tabulate  # 📌 Para mostrar tablas bonitas en la consola
 
@@ -42,9 +44,36 @@ class DateTime:
             print(f"Error al obtener las primeras {n} filas: {e}")
             raise
 
-    def save_to_excel(self, filepath):
-        self.df.to_excel(filepath, index=False)
-        print(f"✅ Archivo Excel guardado en: {filepath}")
+    def save_to_excel(self, filepath: str = None):
+
+        try:
+            # 📌 Si no se pasa ruta, crear nombre automático
+            if not filepath:
+                filepath = f"dim_fecha_{self.start_date}_to_{self.end_date}.xlsx"
+
+            path = Path(filepath)
+
+            # 📌 Validar extensión
+            if path.suffix.lower() != ".xlsx":
+                raise ValueError("El archivo debe tener extensión .xlsx")
+
+            # 📌 Crear carpeta si no existe
+            if not path.parent.exists():
+                path.parent.mkdir(parents=True, exist_ok=True)
+
+            # 📌 Guardar archivo
+            self.df.to_excel(path, index=False, engine="openpyxl")
+
+            print(f"✅ Archivo Excel creado correctamente en: {path.resolve()}")
+
+        except ImportError:
+            print("❌ openpyxl no está instalado. Ejecuta: pip install openpyxl")
+            raise
+
+        except Exception as e:
+            print(f"❌ Error al guardar el archivo: {e}")
+            raise
+
 
     def __str__(self):
         """ Muestra las primeras filas cuando se llama a la instancia """
@@ -55,4 +84,4 @@ class DateTime:
 if __name__ == "__main__":
     date_dim = DateTime(2020, 2025)
     print(date_dim)  # 📌 Muestra las primeras filas como tabla
-    date_dim.save_to_excel(r"C:\Users\rodri\Desktop\fecha.xlsx")  # Guarda el Excel
+    date_dim.save_to_excel()  # Guarda el Excel
